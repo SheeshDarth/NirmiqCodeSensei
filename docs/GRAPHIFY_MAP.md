@@ -28,8 +28,8 @@ Update docs/GRAPHIFY_MAP.md with any new files or changed relationships.
 graph LR
     P0["✅ Phase 0\nRepo + Docs Setup"]
     P1["✅ Phase 1\nApp Shell"]
-    P2["🔄 Phase 2\nDatabase"]
-    P3["⬜ Phase 3\nWorkspaces"]
+    P2["✅ Phase 2\nDatabase"]
+    P3["🔄 Phase 3\nWorkspaces"]
     P4["⬜ Phase 4\nLearning Maps"]
     P5["⬜ Phase 5\nExplain-Back"]
     P6["⬜ Phase 6\nDebug Lab"]
@@ -251,8 +251,13 @@ erDiagram
 | `components/layout/AppShell.tsx` | 1 | ✅ Done |
 | `components/layout/Sidebar.tsx` | 1 | ✅ Done |
 | `components/layout/Topbar.tsx` | 1 | ✅ Done |
-| `lib/db/schema.ts` | 2 | ⬜ Todo |
-| `lib/db/client.ts` | 2 | ⬜ Todo |
+| `lib/db/schema.ts` | 2 | ✅ Done |
+| `lib/db/client.ts` | 2 | ✅ Done |
+| `lib/db/migrate.ts` | 2 | ✅ Done |
+| `lib/db/migrations/` | 2 | ✅ Done |
+| `lib/types.ts` | 2 | ✅ Done |
+| `drizzle.config.ts` | 2 | ✅ Done |
+| `instrumentation.ts` | 2 | ✅ Done |
 | `lib/services/workspace.service.ts` | 3 | ⬜ Todo |
 | `lib/services/learning-map.service.ts` | 4 | ⬜ Todo |
 | `lib/services/explain-back.service.ts` | 5 | ⬜ Todo |
