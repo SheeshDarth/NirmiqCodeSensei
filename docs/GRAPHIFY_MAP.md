@@ -27,8 +27,8 @@ Update docs/GRAPHIFY_MAP.md with any new files or changed relationships.
 ```mermaid
 graph LR
     P0["✅ Phase 0\nRepo + Docs Setup"]
-    P1["🔄 Phase 1\nApp Shell"]
-    P2["⬜ Phase 2\nDatabase"]
+    P1["✅ Phase 1\nApp Shell"]
+    P2["🔄 Phase 2\nDatabase"]
     P3["⬜ Phase 3\nWorkspaces"]
     P4["⬜ Phase 4\nLearning Maps"]
     P5["⬜ Phase 5\nExplain-Back"]
@@ -240,9 +240,17 @@ erDiagram
 | `app/page.tsx` | 0 | ✅ Done |
 | `app/layout.tsx` | 0 | ✅ Done |
 | `app/globals.css` | 0 | ✅ Done |
-| `app/dashboard/page.tsx` | 1 | ⬜ Todo |
-| `app/workspaces/page.tsx` | 1 | ⬜ Todo |
-| `components/layout/` | 1 | ⬜ Todo |
+| `app/(app)/layout.tsx` | 1 | ✅ Done |
+| `app/(app)/dashboard/page.tsx` | 1 | ✅ Done |
+| `app/(app)/workspaces/page.tsx` | 1 | ✅ Done |
+| `app/(app)/explain-back/page.tsx` | 1 | ✅ Done |
+| `app/(app)/debug-lab/page.tsx` | 1 | ✅ Done |
+| `app/(app)/dsa-bridge/page.tsx` | 1 | ✅ Done |
+| `app/(app)/daily-log/page.tsx` | 1 | ✅ Done |
+| `app/(app)/settings/page.tsx` | 1 | ✅ Done |
+| `components/layout/AppShell.tsx` | 1 | ✅ Done |
+| `components/layout/Sidebar.tsx` | 1 | ✅ Done |
+| `components/layout/Topbar.tsx` | 1 | ✅ Done |
 | `lib/db/schema.ts` | 2 | ⬜ Todo |
 | `lib/db/client.ts` | 2 | ⬜ Todo |
 | `lib/services/workspace.service.ts` | 3 | ⬜ Todo |
