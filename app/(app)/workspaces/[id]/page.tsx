@@ -125,19 +125,24 @@ export default async function WorkspaceDetailPage({
 
       {/* Sections */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Learning Map */}
-        <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">
+        {/* Learning Map — live */}
+        <Link
+          href={`/workspaces/${ws.id}/learning-map`}
+          className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
+        >
           <div className="flex items-center gap-2 mb-2">
             <Map size={15} className="text-cyan-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">Learning Map</h2>
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
+              Learning Map
+            </h2>
           </div>
           <p className="text-xs text-zinc-500 mb-3">
             Break this workspace into modules, concepts, and checkpoints.
           </p>
-          <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-1 rounded">
-            Available in Phase 4
+          <span className="text-xs text-cyan-400 font-medium">
+            Open →
           </span>
-        </div>
+        </Link>
 
         {/* Explain-Back */}
         <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">
