@@ -17,6 +17,7 @@
     "mcp": "tsx mcp-server/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.101.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.10.0",
     "drizzle-orm": "^0.45.2",

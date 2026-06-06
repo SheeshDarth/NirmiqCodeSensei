@@ -30,6 +30,9 @@ import { createConceptLink, getConceptLinksByWorkspaceId } from "../lib/services
 import { createDailyLog, getDailyLogsByWorkspaceId } from "../lib/services/daily-log.service";
 import { getLearningMapByWorkspaceId } from "../lib/services/learning-map.service";
 
+// ── AI-powered tools (Pro tier — requires ANTHROPIC_API_KEY) ──────────────────
+import { generateQuestions, suggestConcepts, debugAssist } from "./ai-tools";
+
 // ── Server setup ───────────────────────────────────────────────────────────────
 
 const server = new Server(
@@ -215,6 +218,65 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["workspace_id"],
       },
     },
+
+    // ── AI-powered tools (Pro tier) ─────────────────────────────────────────
+    {
+      name: "nirmiq_generate_questions",
+      description:
+        "AI-POWERED: Analyse a code snippet and generate 5 explain-back questions the student should be able to answer, with expected answer points. Requires ANTHROPIC_API_KEY in environment. Call this whenever you write a significant function, class, or feature so the student gets instant review material.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          code_snippet: {
+            type: "string",
+            description: "The code snippet to analyse (paste the full function or class)",
+          },
+          context: {
+            type: "string",
+            description: "Optional: short description of what was just built (1-2 sentences)",
+          },
+        },
+        required: ["code_snippet"],
+      },
+    },
+    {
+      name: "nirmiq_suggest_concepts",
+      description:
+        "AI-POWERED: Analyse a code snippet and identify the underlying DSA/CS concepts it uses (HashMap, Binary Search, Design Pattern, etc.) with concrete practice tasks. Requires ANTHROPIC_API_KEY. Call this when implementing a feature to show the student what fundamentals are at play.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          code_snippet: {
+            type: "string",
+            description: "The code snippet to analyse",
+          },
+          feature_description: {
+            type: "string",
+            description: "Optional: what feature this code implements",
+          },
+        },
+        required: ["code_snippet"],
+      },
+    },
+    {
+      name: "nirmiq_debug_assist",
+      description:
+        "AI-POWERED: Analyse an error message and code context to identify the likely root cause, top 3 things to check, a suggested fix, and a prevention rule. Requires ANTHROPIC_API_KEY. Call this when the student hits an error — then use add_debug_log to save the diagnosis permanently.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          error_message: {
+            type: "string",
+            description: "The full error message or stack trace",
+          },
+          code_context: {
+            type: "string",
+            description: "Optional: the code that caused the error",
+          },
+        },
+        required: ["error_message"],
+      },
+    },
   ],
 }));
 
@@ -398,6 +460,37 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           (q, i) => `${i + 1}. [${q.difficulty}] ${q.question}`
         );
         return ok(`${qs.length} weak question(s) to review:\n\n${lines.join("\n")}`);
+      }
+
+      // ── AI-powered tools (Pro tier) ────────────────────────────────────────
+      case "nirmiq_generate_questions": {
+        const schema = z.object({
+          code_snippet: z.string().min(10),
+          context: z.string().optional(),
+        });
+        const v = schema.parse(args);
+        const result = await generateQuestions(v.code_snippet, v.context);
+        return ok(result);
+      }
+
+      case "nirmiq_suggest_concepts": {
+        const schema = z.object({
+          code_snippet: z.string().min(10),
+          feature_description: z.string().optional(),
+        });
+        const v = schema.parse(args);
+        const result = await suggestConcepts(v.code_snippet, v.feature_description);
+        return ok(result);
+      }
+
+      case "nirmiq_debug_assist": {
+        const schema = z.object({
+          error_message: z.string().min(5),
+          code_context: z.string().optional(),
+        });
+        const v = schema.parse(args);
+        const result = await debugAssist(v.error_message, v.code_context);
+        return ok(result);
       }
 
       default:

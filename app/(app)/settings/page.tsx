@@ -1,4 +1,4 @@
-import { Settings, Shield, Code2, ExternalLink } from "lucide-react";
+import { Settings, Shield, Code2, ExternalLink, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -44,11 +44,13 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium text-zinc-100">AI Provider</p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Local LLM support — planned for later phases
+              Anthropic API — set{" "}
+              <code className="font-mono text-amber-400">ANTHROPIC_API_KEY</code>{" "}
+              to unlock AI tools
             </p>
           </div>
-          <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded">
-            coming soon
+          <span className="text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
+            BYOK
           </span>
         </div>
 
@@ -126,10 +128,77 @@ export default function SettingsPage() {
           </div>
 
           <p className="text-xs text-zinc-700">
-            After connecting, your AI assistant will have access to 7 tools:
-            list_workspaces · get_workspace_summary · add_debug_log ·
-            add_question · add_concept_link · add_daily_log ·
+            Free tools (7): list_workspaces · get_workspace_summary ·
+            add_debug_log · add_question · add_concept_link · add_daily_log ·
             get_weak_questions
+          </p>
+          <p className="text-xs text-amber-700 mt-1">
+            AI tools (3, needs ANTHROPIC_API_KEY): nirmiq_generate_questions ·
+            nirmiq_suggest_concepts · nirmiq_debug_assist
+          </p>
+        </div>
+      </div>
+
+      {/* AI Pro Features */}
+      <div className="bg-[#0d1117] border border-amber-900/40 rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={15} className="text-amber-400" />
+          <h2 className="text-sm font-semibold text-zinc-100">
+            AI Pro Features
+          </h2>
+          <span className="text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded ml-auto">
+            BYOK
+          </span>
+        </div>
+        <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+          Three AI-powered MCP tools that call the Anthropic API using{" "}
+          <em>your own key</em>. Your code never leaves your machine — it is
+          sent directly from the MCP server to Anthropic, not through any
+          NirmiqLearn server.
+        </p>
+
+        <div className="space-y-3 mb-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
+            <p className="text-xs font-mono text-amber-300">
+              nirmiq_generate_questions
+            </p>
+            <p className="text-xs text-zinc-500">
+              Paste a code snippet → get 5 progressive explain-back questions
+              with expected answer bullets (beginner → advanced).
+            </p>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
+            <p className="text-xs font-mono text-amber-300">
+              nirmiq_suggest_concepts
+            </p>
+            <p className="text-xs text-zinc-500">
+              Paste code → get 3–5 underlying DSA/CS concepts with 30-min
+              practice tasks to reinforce each one.
+            </p>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
+            <p className="text-xs font-mono text-amber-300">
+              nirmiq_debug_assist
+            </p>
+            <p className="text-xs text-zinc-500">
+              Paste an error message → get root cause, top 3 checks, suggested
+              fix, and a prevention rule.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-zinc-400 font-medium mb-1.5">
+            Setup — create{" "}
+            <span className="font-mono text-zinc-500">.env.local</span> in the
+            project root
+          </p>
+          <pre className="bg-zinc-900 border border-zinc-800 text-xs text-cyan-300 font-mono px-3 py-2 rounded overflow-x-auto">
+            {`ANTHROPIC_API_KEY=sk-ant-api03-...`}
+          </pre>
+          <p className="text-xs text-zinc-700 mt-2">
+            Then restart the MCP server. The 3 AI tools will appear automatically
+            alongside the 7 free tools.
           </p>
         </div>
       </div>
