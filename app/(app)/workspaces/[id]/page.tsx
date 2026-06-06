@@ -161,19 +161,22 @@ export default async function WorkspaceDetailPage({
           <span className="text-xs text-violet-400 font-medium">Open →</span>
         </Link>
 
-        {/* Debug Lab */}
-        <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">
+        {/* Debug Lab — live */}
+        <Link
+          href={`/workspaces/${ws.id}/debug-lab`}
+          className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
+        >
           <div className="flex items-center gap-2 mb-2">
             <Bug size={15} className="text-amber-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">Debug Lab</h2>
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
+              Debug Lab
+            </h2>
           </div>
           <p className="text-xs text-zinc-500 mb-3">
             Log every bug, record the fix, and extract the lesson so it never costs twice.
           </p>
-          <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-1 rounded">
-            Available in Phase 6
-          </span>
-        </div>
+          <span className="text-xs text-amber-400 font-medium">Open →</span>
+        </Link>
 
         {/* Daily Log */}
         <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">
