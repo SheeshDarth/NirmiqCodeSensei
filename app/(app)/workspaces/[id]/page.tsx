@@ -144,19 +144,22 @@ export default async function WorkspaceDetailPage({
           </span>
         </Link>
 
-        {/* Explain-Back */}
-        <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">
+        {/* Explain-Back — live */}
+        <Link
+          href={`/workspaces/${ws.id}/explain-back`}
+          className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
+        >
           <div className="flex items-center gap-2 mb-2">
             <MessageSquare size={15} className="text-violet-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">Explain-Back</h2>
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
+              Explain-Back
+            </h2>
           </div>
           <p className="text-xs text-zinc-500 mb-3">
             Answer questions about this workspace until you can explain it cold.
           </p>
-          <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-1 rounded">
-            Available in Phase 5
-          </span>
-        </div>
+          <span className="text-xs text-violet-400 font-medium">Open →</span>
+        </Link>
 
         {/* Debug Lab */}
         <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-5">

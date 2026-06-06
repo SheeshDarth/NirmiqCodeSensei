@@ -31,8 +31,8 @@ graph LR
     P2["✅ Phase 2\nDatabase"]
     P3["✅ Phase 3\nWorkspaces"]
     P4["✅ Phase 4\nLearning Maps"]
-    P5["🔄 Phase 5\nExplain-Back"]
-    P6["⬜ Phase 6\nDebug Lab"]
+    P5["✅ Phase 5\nExplain-Back"]
+    P6["🔄 Phase 6\nDebug Lab"]
     P7["⬜ Phase 7\nDSA Bridge"]
     P8["⬜ Phase 8\nExport"]
     P9["⬜ Phase 9\nPolish"]
@@ -274,7 +274,14 @@ erDiagram
 | `components/learning-map/AddModuleForm.tsx` | 4 | ✅ Done |
 | `components/learning-map/ModuleCard.tsx` | 4 | ✅ Done |
 | `components/learning-map/AddCheckpointForm.tsx` | 4 | ✅ Done |
-| `lib/services/explain-back.service.ts` | 5 | ⬜ Todo |
+| `lib/utils.ts` | 5 | ✅ Done |
+| `lib/validators/explain-back.schema.ts` | 5 | ✅ Done |
+| `lib/services/explain-back.service.ts` | 5 | ✅ Done |
+| `app/(app)/workspaces/[id]/explain-back/page.tsx` | 5 | ✅ Done |
+| `app/(app)/workspaces/[id]/explain-back/actions.ts` | 5 | ✅ Done |
+| `app/(app)/explain-back/page.tsx` | 5 | ✅ Done |
+| `components/explain-back/QuestionCard.tsx` | 5 | ✅ Done |
+| `components/explain-back/AddQuestionForm.tsx` | 5 | ✅ Done |
 | `lib/services/debug-log.service.ts` | 6 | ⬜ Todo |
 | `lib/services/export.service.ts` | 8 | ⬜ Todo |
 
