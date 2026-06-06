@@ -32,7 +32,7 @@ graph LR
     P3["✅ Phase 3\nWorkspaces"]
     P4["✅ Phase 4\nLearning Maps"]
     P5["✅ Phase 5\nExplain-Back"]
-    P6["🔄 Phase 6\nDebug Lab"]
+    P6["✅ Phase 6\nDebug Lab"]
     P7["⬜ Phase 7\nDSA Bridge"]
     P8["⬜ Phase 8\nExport"]
     P9["⬜ Phase 9\nPolish"]
@@ -282,7 +282,12 @@ erDiagram
 | `app/(app)/explain-back/page.tsx` | 5 | ✅ Done |
 | `components/explain-back/QuestionCard.tsx` | 5 | ✅ Done |
 | `components/explain-back/AddQuestionForm.tsx` | 5 | ✅ Done |
-| `lib/services/debug-log.service.ts` | 6 | ⬜ Todo |
+| `lib/validators/debug-log.schema.ts` | 6 | ✅ Done |
+| `lib/services/debug-log.service.ts` | 6 | ✅ Done |
+| `app/(app)/workspaces/[id]/debug-lab/actions.ts` | 6 | ✅ Done |
+| `app/(app)/workspaces/[id]/debug-lab/page.tsx` | 6 | ✅ Done |
+| `components/debug-lab/CreateDebugLogForm.tsx` | 6 | ✅ Done |
+| `components/debug-lab/DebugLogCard.tsx` | 6 | ✅ Done |
 | `lib/services/export.service.ts` | 8 | ⬜ Todo |
 
 > Update this table after completing each file.
