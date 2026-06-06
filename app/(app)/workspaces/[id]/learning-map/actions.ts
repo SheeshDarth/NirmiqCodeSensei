@@ -15,6 +15,7 @@ import {
   toggleCheckpoint,
 } from "@/lib/services/learning-map.service";
 import { revalidatePath } from "next/cache";
+import { getString, getUUID } from "@/lib/utils/server";
 
 function revalidate(workspaceId: string) {
   revalidatePath(`/workspaces/${workspaceId}/learning-map`);
@@ -31,8 +32,8 @@ export async function createMapAction(
   formData: FormData
 ): Promise<ActionState> {
   const parsed = createLearningMapSchema.safeParse({
-    title: formData.get("title"),
-    summary: (formData.get("summary") as string) || undefined,
+    title: getString(formData, "title"),
+    summary: getString(formData, "summary") ?? undefined,
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -53,11 +54,11 @@ export async function addModuleAction(
   formData: FormData
 ): Promise<ActionState> {
   const parsed = addModuleSchema.safeParse({
-    title: formData.get("title"),
-    summary: (formData.get("summary") as string) || undefined,
-    difficulty: formData.get("difficulty") || "beginner",
-    concepts: (formData.get("concepts") as string) || undefined,
-    files: (formData.get("files") as string) || undefined,
+    title: getString(formData, "title"),
+    summary: getString(formData, "summary") ?? undefined,
+    difficulty: getString(formData, "difficulty") ?? "beginner",
+    concepts: getString(formData, "concepts") ?? undefined,
+    files: getString(formData, "files") ?? undefined,
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -78,7 +79,7 @@ export async function addCheckpointAction(
   formData: FormData
 ): Promise<ActionState> {
   const parsed = addCheckpointSchema.safeParse({
-    question: formData.get("question"),
+    question: getString(formData, "question"),
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -90,43 +91,47 @@ export async function addCheckpointAction(
   return null;
 }
 
-// ── Update confidence (simple form action, no state needed) ───────────────────
+// ── Update confidence ─────────────────────────────────────────────────────────
 
 export async function updateConfidenceAction(formData: FormData) {
   const parsed = updateConfidenceSchema.safeParse({
-    mapId: formData.get("mapId"),
-    moduleId: formData.get("moduleId"),
-    confidence: formData.get("confidence"),
+    mapId: getString(formData, "mapId"),
+    moduleId: getString(formData, "moduleId"),
+    confidence: getString(formData, "confidence"),
   });
   if (!parsed.success) return;
 
   const { mapId, moduleId, confidence } = parsed.data;
   await updateModuleConfidence(mapId, moduleId, confidence);
 
-  const workspaceId = formData.get("workspaceId") as string;
-  revalidate(workspaceId);
+  // workspaceId here is for cache revalidation only, not data access.
+  // Still validate it's a UUID to prevent cache-path manipulation.
+  const workspaceId = getUUID(formData, "workspaceId");
+  if (workspaceId) revalidate(workspaceId);
 }
 
 // ── Delete module ─────────────────────────────────────────────────────────────
 
 export async function deleteModuleAction(formData: FormData) {
-  const mapId = formData.get("mapId") as string;
-  const moduleId = formData.get("moduleId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const mapId = getString(formData, "mapId");
+  const moduleId = getString(formData, "moduleId");
+  const workspaceId = getUUID(formData, "workspaceId");
+
   if (!mapId || !moduleId) return;
 
   await deleteModule(mapId, moduleId);
-  revalidate(workspaceId);
+  if (workspaceId) revalidate(workspaceId);
 }
 
 // ── Toggle checkpoint ─────────────────────────────────────────────────────────
 
 export async function toggleCheckpointAction(formData: FormData) {
-  const mapId = formData.get("mapId") as string;
-  const checkpointId = formData.get("checkpointId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const mapId = getString(formData, "mapId");
+  const checkpointId = getString(formData, "checkpointId");
+  const workspaceId = getUUID(formData, "workspaceId");
+
   if (!mapId || !checkpointId) return;
 
   await toggleCheckpoint(mapId, checkpointId);
-  revalidate(workspaceId);
+  if (workspaceId) revalidate(workspaceId);
 }

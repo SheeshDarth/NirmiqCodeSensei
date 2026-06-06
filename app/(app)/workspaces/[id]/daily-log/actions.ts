@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createDailyLogSchema } from "@/lib/validators/daily-log.schema";
 import { createDailyLog, deleteDailyLog } from "@/lib/services/daily-log.service";
+import { getString } from "@/lib/utils/server";
 
 export async function createDailyLogAction(
   workspaceId: string,
@@ -10,12 +11,12 @@ export async function createDailyLogAction(
   formData: FormData
 ): Promise<{ error?: string } | null> {
   const raw = {
-    date: formData.get("date"),
-    builtToday: formData.get("builtToday") || undefined,
-    understoodToday: formData.get("understoodToday") || undefined,
-    unclearTopics: formData.get("unclearTopics") || undefined,
-    bugsFaced: formData.get("bugsFaced") || undefined,
-    nextAction: formData.get("nextAction") || undefined,
+    date: getString(formData, "date"),
+    builtToday: getString(formData, "builtToday") ?? undefined,
+    understoodToday: getString(formData, "understoodToday") ?? undefined,
+    unclearTopics: getString(formData, "unclearTopics") ?? undefined,
+    bugsFaced: getString(formData, "bugsFaced") ?? undefined,
+    nextAction: getString(formData, "nextAction") ?? undefined,
   };
 
   const parsed = createDailyLogSchema.safeParse(raw);
@@ -30,6 +31,7 @@ export async function createDailyLogAction(
   return null;
 }
 
+// workspaceId and logId are bound server-side from DB rows — already trusted.
 export async function deleteDailyLogAction(
   workspaceId: string,
   logId: string

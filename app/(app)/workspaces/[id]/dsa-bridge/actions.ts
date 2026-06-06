@@ -6,6 +6,7 @@ import {
   createConceptLink,
   deleteConceptLink,
 } from "@/lib/services/concept-link.service";
+import { getString } from "@/lib/utils/server";
 
 export async function createConceptLinkAction(
   workspaceId: string,
@@ -13,11 +14,11 @@ export async function createConceptLinkAction(
   formData: FormData
 ): Promise<{ error?: string } | null> {
   const raw = {
-    projectFeature: formData.get("projectFeature"),
-    conceptName: formData.get("conceptName"),
-    conceptType: formData.get("conceptType") || undefined,
-    explanation: formData.get("explanation") || undefined,
-    practiceTask: formData.get("practiceTask") || undefined,
+    projectFeature: getString(formData, "projectFeature"),
+    conceptName: getString(formData, "conceptName"),
+    conceptType: getString(formData, "conceptType") ?? undefined,
+    explanation: getString(formData, "explanation") ?? undefined,
+    practiceTask: getString(formData, "practiceTask") ?? undefined,
   };
 
   const parsed = createConceptLinkSchema.safeParse(raw);
@@ -32,6 +33,7 @@ export async function createConceptLinkAction(
   return null;
 }
 
+// workspaceId and linkId are bound server-side from DB rows — already trusted.
 export async function deleteConceptLinkAction(
   workspaceId: string,
   linkId: string

@@ -10,6 +10,7 @@ import {
   deleteQuestion,
 } from "@/lib/services/explain-back.service";
 import { revalidatePath } from "next/cache";
+import { getString, getUUID } from "@/lib/utils/server";
 
 export type ActionState = { error?: string } | null;
 
@@ -24,10 +25,10 @@ export async function addQuestionAction(
   formData: FormData
 ): Promise<ActionState> {
   const parsed = createQuestionSchema.safeParse({
-    question: formData.get("question"),
-    difficulty: formData.get("difficulty") || "beginner",
-    expectedPoints: (formData.get("expectedPoints") as string) || undefined,
-    learningMapId: (formData.get("learningMapId") as string) || undefined,
+    question: getString(formData, "question"),
+    difficulty: getString(formData, "difficulty") ?? "beginner",
+    expectedPoints: getString(formData, "expectedPoints") ?? undefined,
+    learningMapId: getString(formData, "learningMapId") ?? undefined,
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -46,8 +47,8 @@ export async function submitAnswerAction(
   formData: FormData
 ): Promise<ActionState> {
   const parsed = submitAnswerSchema.safeParse({
-    userAnswer: formData.get("userAnswer"),
-    confidence: formData.get("confidence"),
+    userAnswer: getString(formData, "userAnswer"),
+    confidence: getString(formData, "confidence"),
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -60,10 +61,11 @@ export async function submitAnswerAction(
 }
 
 export async function deleteQuestionAction(formData: FormData) {
-  const questionId = formData.get("questionId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const questionId = getString(formData, "questionId");
+  const workspaceId = getUUID(formData, "workspaceId");
+
   if (!questionId) return;
 
   await deleteQuestion(questionId);
-  revalidate(workspaceId);
+  if (workspaceId) revalidate(workspaceId);
 }

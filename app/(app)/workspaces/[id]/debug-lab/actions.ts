@@ -7,6 +7,7 @@ import {
   updateDebugLog,
   deleteDebugLog,
 } from "@/lib/services/debug-log.service";
+import { getString } from "@/lib/utils/server";
 
 export async function createDebugLogAction(
   workspaceId: string,
@@ -14,9 +15,9 @@ export async function createDebugLogAction(
   formData: FormData
 ): Promise<{ error?: string } | null> {
   const raw = {
-    title: formData.get("title"),
-    errorMessage: formData.get("errorMessage") || undefined,
-    suspectedCause: formData.get("suspectedCause") || undefined,
+    title: getString(formData, "title"),
+    errorMessage: getString(formData, "errorMessage") ?? undefined,
+    suspectedCause: getString(formData, "suspectedCause") ?? undefined,
   };
 
   const parsed = createDebugLogSchema.safeParse(raw);
@@ -38,10 +39,10 @@ export async function updateDebugLogAction(
   formData: FormData
 ): Promise<{ error?: string } | null> {
   const raw = {
-    actualCause: formData.get("actualCause") || undefined,
-    fixSummary: formData.get("fixSummary") || undefined,
-    lessonLearned: formData.get("lessonLearned") || undefined,
-    preventionRule: formData.get("preventionRule") || undefined,
+    actualCause: getString(formData, "actualCause") ?? undefined,
+    fixSummary: getString(formData, "fixSummary") ?? undefined,
+    lessonLearned: getString(formData, "lessonLearned") ?? undefined,
+    preventionRule: getString(formData, "preventionRule") ?? undefined,
   };
 
   const parsed = updateDebugLogSchema.safeParse(raw);
@@ -56,6 +57,7 @@ export async function updateDebugLogAction(
   return null;
 }
 
+// workspaceId and logId are bound server-side from DB rows — already trusted.
 export async function deleteDebugLogAction(
   workspaceId: string,
   logId: string

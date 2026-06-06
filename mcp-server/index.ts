@@ -404,8 +404,16 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         return err(`Unknown tool: ${name}`);
     }
   } catch (e) {
+    // Sanitise error message — only surface safe, user-actionable text.
+    // Never forward raw stack traces, file paths, or DB internals to the MCP client.
+    if (e instanceof z.ZodError) {
+      const msg = e.issues[0]?.message ?? "Invalid arguments";
+      return err(`Validation error: ${msg}`);
+    }
     const message = e instanceof Error ? e.message : String(e);
-    return err(`Tool execution failed: ${message}`);
+    // Strip any path-like strings that could reveal filesystem layout
+    const safe = message.replace(/[A-Za-z]:\\[^\s]+|\/[^\s]+/g, "[path]");
+    return err(`Tool failed: ${safe}`);
   }
 });
 
