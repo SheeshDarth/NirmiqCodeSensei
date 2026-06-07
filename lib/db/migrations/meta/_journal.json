@@ -8,6 +8,13 @@
       "when": 1780584700643,
       "tag": "0000_colorful_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780819897243,
+      "tag": "0001_mature_jazinda",
+      "breakpoints": true
     }
   ]
 }

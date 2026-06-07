@@ -31,7 +31,8 @@ import { createDailyLog, getDailyLogsByWorkspaceId } from "../lib/services/daily
 import { getLearningMapByWorkspaceId } from "../lib/services/learning-map.service";
 
 // ── AI-powered tools (Pro tier — requires ANTHROPIC_API_KEY) ──────────────────
-import { generateQuestions, suggestConcepts, debugAssist } from "./ai-tools";
+import { generateQuestions, suggestConcepts, debugAssist, analyzeProject, explainCommand } from "./ai-tools";
+import { createSessionLog } from "../lib/services/session-log.service";
 
 // ── Server setup ───────────────────────────────────────────────────────────────
 
@@ -277,6 +278,44 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["error_message"],
       },
     },
+    {
+      name: "nirmiq_analyze_project",
+      description:
+        "AI-POWERED: Point NirmiqLearn at any project folder and get a complete understanding breakdown — plain English explanation of what it does, tech stack simplified, architecture overview, key files, learning map, 10 explain-back questions, and 5 CS concepts. Automatically creates a workspace populated with all of this. Use this when the user says 'help me understand this project' or 'I vibe coded this and don't know what it does'. Requires NIRMIQ_PRO_KEY + ANTHROPIC_API_KEY.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: {
+            type: "string",
+            description: "Absolute path to the project folder to analyze (e.g. C:/Users/me/MyProject or /home/me/myproject)",
+          },
+          workspace_name: {
+            type: "string",
+            description: "Optional: name for the NirmiqLearn workspace. Defaults to the folder name.",
+          },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "nirmiq_explain_command",
+      description:
+        "AI-POWERED: Explain a shell command in plain English before or after it runs. Returns a plain-language explanation of what the command does, why it might be running, what it will change, and a risk level (safe/caution/risky). Use this to log commands to the session log so the user builds understanding of what happened during vibe coding. Requires NIRMIQ_PRO_KEY + ANTHROPIC_API_KEY.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          command: {
+            type: "string",
+            description: "The shell command to explain",
+          },
+          workspace_id: {
+            type: "string",
+            description: "Optional: workspace to log this explanation to",
+          },
+        },
+        required: ["command"],
+      },
+    },
   ],
 }));
 
@@ -491,6 +530,40 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         const v = schema.parse(args);
         const result = await debugAssist(v.error_message, v.code_context);
         return ok(result);
+      }
+
+      case "nirmiq_analyze_project": {
+        const schema = z.object({
+          project_path: z.string().min(2),
+          workspace_name: z.string().optional(),
+        });
+        const v = schema.parse(args);
+        const result = await analyzeProject(v.project_path, v.workspace_name);
+        return ok(result);
+      }
+
+      case "nirmiq_explain_command": {
+        const schema = z.object({
+          command: z.string().min(1),
+          workspace_id: z.string().optional(),
+        });
+        const v = schema.parse(args);
+        const result = await explainCommand(v.command, v.workspace_id);
+
+        // Save to session log if we got a meaningful explanation
+        await createSessionLog({
+          workspaceId: v.workspace_id,
+          toolName: "Bash",
+          actionSummary: v.command.slice(0, 500),
+          explanation: result.explanation,
+          riskLevel: result.riskLevel,
+          source: "hook",
+        });
+
+        const riskEmoji = result.riskLevel === "risky" ? "🔴" : result.riskLevel === "caution" ? "🟡" : "🟢";
+        return ok(
+          `${riskEmoji} ${result.shortLabel}\n\n${result.explanation}\n\n─\nRisk: ${result.riskLevel} · Logged to session log.`
+        );
       }
 
       default:

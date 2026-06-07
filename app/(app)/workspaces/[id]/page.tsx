@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Bug,
   Download,
+  Activity,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -211,6 +212,27 @@ export default async function WorkspaceDetailPage({
             Map every feature to its underlying concept, and build a personal practice queue.
           </p>
           <span className="text-xs text-violet-400 font-medium">Open →</span>
+        </Link>
+
+        {/* Session Log — vibe coding companion */}
+        <Link
+          href={`/workspaces/${ws.id}/session-log`}
+          className="group bg-[#0d1117] border border-cyan-900/40 hover:border-cyan-800/60 rounded-lg p-5 transition-colors block sm:col-span-2"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Activity size={15} className="text-cyan-400" />
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
+              Session Log
+            </h2>
+            <span className="text-xs text-cyan-600 bg-cyan-500/10 px-2 py-0.5 rounded ml-auto">
+              vibe coding companion
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500 mb-3">
+            Every command your AI assistant ran — explained in plain English. Know what was built and why,
+            even if you just clicked &ldquo;Allow&rdquo; without reading it.
+          </p>
+          <span className="text-xs text-cyan-400 font-medium">Open →</span>
         </Link>
       </div>
     </div>
