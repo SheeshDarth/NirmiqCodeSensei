@@ -20,6 +20,9 @@ data/*.sqlite
 *.db-wal
 *.sqlite
 
+# license cache — contains key hash and email, never commit
+data/license-cache.json
+
 # logs
 npm-debug.log*
 yarn-debug.log*

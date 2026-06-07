@@ -42,15 +42,17 @@ export default function SettingsPage() {
         {/* AI Provider */}
         <div className="p-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-100">AI Provider</p>
+            <p className="text-sm font-medium text-zinc-100">AI Pro Tools</p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Anthropic API — set{" "}
-              <code className="font-mono text-amber-400">ANTHROPIC_API_KEY</code>{" "}
-              to unlock AI tools
+              Needs{" "}
+              <code className="font-mono text-amber-400">NIRMIQ_PRO_KEY</code>
+              {" "}+{" "}
+              <code className="font-mono text-amber-400">ANTHROPIC_API_KEY</code>
+              {" "}in .env.local
             </p>
           </div>
           <span className="text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
-            BYOK
+            Pro
           </span>
         </div>
 
@@ -189,17 +191,24 @@ export default function SettingsPage() {
 
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-1.5">
-            Setup — create{" "}
-            <span className="font-mono text-zinc-500">.env.local</span> in the
-            project root
+            Setup — add both keys to{" "}
+            <span className="font-mono text-zinc-500">.env.local</span>
           </p>
           <pre className="bg-zinc-900 border border-zinc-800 text-xs text-cyan-300 font-mono px-3 py-2 rounded overflow-x-auto">
-            {`ANTHROPIC_API_KEY=sk-ant-api03-...`}
+            {`# 1. Your Gumroad Pro license key\nNIRMIQ_PRO_KEY=XXXX-XXXX-XXXX-XXXX\n\n# 2. Your Anthropic API key (BYOK)\nANTHROPIC_API_KEY=sk-ant-api03-...`}
           </pre>
           <p className="text-xs text-zinc-700 mt-2">
-            Then restart the MCP server. The 3 AI tools will appear automatically
-            alongside the 7 free tools.
+            License verified against Gumroad once, then cached locally for 7
+            days — works offline after first activation.
           </p>
+          <a
+            href="https://gumroad.com/l/nirmiqlearn"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mt-2 text-xs text-amber-500 hover:text-amber-300 transition-colors"
+          >
+            Get a Pro license key <ExternalLink size={11} />
+          </a>
         </div>
       </div>
 

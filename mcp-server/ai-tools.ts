@@ -1,36 +1,47 @@
 /**
  * NirmiqLearn OS — AI-Powered MCP Tools (Pro Tier)
  *
- * These tools require the user to supply their own Anthropic API key
- * via ANTHROPIC_API_KEY in .env.local (or shell environment).
+ * These tools require:
+ *   1. NIRMIQ_PRO_KEY — a valid Gumroad license key (verified once, cached 7 days)
+ *   2. ANTHROPIC_API_KEY — the user's own Anthropic API key (BYOK)
  *
- * Model: claude-opus-4-8 (change to claude-haiku-4-5 to reduce per-call cost)
+ * Model: claude-opus-4-8
  *
  * Security:
- * - Client is instantiated lazily; key is never stored globally.
- * - All prompts are constructed server-side only — no user-controlled
- *   system-prompt injection.
+ * - Pro license is verified against Gumroad API; raw key is never stored.
+ * - Anthropic client is instantiated per-call; key never stored globally.
+ * - All prompts are constructed server-side only — no user-controlled injection.
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { checkLicense, licenseErrorMessage } from "./license";
 
-// ── Key gate ───────────────────────────────────────────────────────────────────
+// ── Pro gate: license + API key ────────────────────────────────────────────────
 
-const NO_KEY_MSG = [
-  "🔑 AI features need an Anthropic API key.",
+const NO_ANTHROPIC_KEY_MSG = [
+  "🔑 AI tools also need your Anthropic API key.",
   "",
-  "1. Create .env.local next to your NirmiqLearnOS directory:",
+  "Add to .env.local in your NirmiqLearnOS directory:",
   "   ANTHROPIC_API_KEY=sk-ant-api03-...",
   "",
-  "2. Restart the MCP server.",
-  "",
   "Get a key at https://console.anthropic.com/",
+  "Restart the MCP server after adding it.",
 ].join("\n");
 
-function getClient(): Anthropic | null {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
-  return new Anthropic({ apiKey: key });
+/**
+ * Verify both the Pro license and the Anthropic API key.
+ * Returns null if everything is valid, or an error message string to return immediately.
+ */
+async function checkPro(): Promise<string | null> {
+  const license = await checkLicense();
+  if (!license.valid) return licenseErrorMessage(license.reason);
+  if (!process.env.ANTHROPIC_API_KEY) return NO_ANTHROPIC_KEY_MSG;
+  return null;
+}
+
+function getClient(): Anthropic {
+  // Called only after checkPro() confirms the key exists
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
@@ -68,8 +79,9 @@ export async function generateQuestions(
   codeSnippet: string,
   context?: string
 ): Promise<string> {
+  const gate = await checkPro();
+  if (gate) return gate;
   const client = getClient();
-  if (!client) return NO_KEY_MSG;
 
   try {
     const response = await client.messages.create({
@@ -124,8 +136,9 @@ export async function suggestConcepts(
   codeSnippet: string,
   featureDescription?: string
 ): Promise<string> {
+  const gate = await checkPro();
+  if (gate) return gate;
   const client = getClient();
-  if (!client) return NO_KEY_MSG;
 
   try {
     const response = await client.messages.create({
@@ -178,8 +191,9 @@ export async function debugAssist(
   errorMessage: string,
   codeContext?: string
 ): Promise<string> {
+  const gate = await checkPro();
+  if (gate) return gate;
   const client = getClient();
-  if (!client) return NO_KEY_MSG;
 
   try {
     const response = await client.messages.create({
