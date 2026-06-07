@@ -62,9 +62,12 @@ export default function ImportProjectPage() {
           <h1 className="text-lg font-semibold text-zinc-100">Import Project</h1>
         </div>
         <p className="text-sm text-zinc-500">
-          Paste a GitHub URL or a local folder path. NirmiqLearn will read the
-          codebase and generate a full learning breakdown — what it does, how it
+          Paste a GitHub URL or a local folder path. NirmiqLearn reads the
+          codebase and generates a full learning breakdown — what it does, how it
           works, and what you need to understand to own it.
+        </p>
+        <p className="text-xs text-zinc-600 mt-1.5">
+          Works offline — no API key needed. Add <code className="text-zinc-500 bg-zinc-900 px-1 rounded">ANTHROPIC_API_KEY</code> to <code className="text-zinc-500 bg-zinc-900 px-1 rounded">.env.local</code> for deeper AI analysis.
         </p>
       </div>
 

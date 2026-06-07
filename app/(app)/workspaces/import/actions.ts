@@ -22,14 +22,8 @@ export async function importProjectAction(
     return { status: "error", message: "Please enter a GitHub URL or local folder path." };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return {
-      status: "error",
-      message:
-        "ANTHROPIC_API_KEY is not set in .env.local. Add it and restart the server.",
-    };
-  }
+  // API key is optional — if present, uses Claude AI; if absent, uses local heuristic analysis
+  const apiKey = process.env.ANTHROPIC_API_KEY || undefined;
 
   // Resolve path (clone if GitHub URL)
   let localPath: string;
@@ -49,7 +43,7 @@ export async function importProjectAction(
     return { status: "error", message: `Could not access project: ${safe.slice(0, 200)}` };
   }
 
-  // Run analysis
+  // Run analysis (AI if API key present, local heuristics if not)
   const result = await analyzeProject({
     projectPath: localPath,
     workspaceName: customName ?? repoName,

@@ -16,6 +16,7 @@ import path from "path";
 import { createWorkspace } from "@/lib/services/workspace.service";
 import { createQuestion } from "@/lib/services/explain-back.service";
 import { createConceptLink } from "@/lib/services/concept-link.service";
+import { detectStack, generateLocalAnalysisText } from "@/lib/services/local-analyzer.service";
 import type { ServiceResult } from "@/lib/types";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -49,7 +50,8 @@ export const IMPORTED_PROJECTS_DIR = path.resolve(
 export interface AnalyzeProjectOptions {
   projectPath: string;
   workspaceName?: string;
-  anthropicApiKey: string;
+  /** Optional — if omitted, local heuristic analysis is used (no API call). */
+  anthropicApiKey?: string;
 }
 
 export interface AnalysisResult {
@@ -179,11 +181,16 @@ export async function analyzeProject(
   const fileTree = getFileTree(resolvedPath).join("\n").slice(0, 3000);
   const keyFileContents = readKeyFiles(resolvedPath).slice(0, 8000);
 
-  const client = new Anthropic({ apiKey: anthropicApiKey });
-
   let analysisText: string;
 
-  try {
+  if (!anthropicApiKey) {
+    // ── Local heuristic analysis (no API key needed) ───────────────────────
+    const stack = detectStack(resolvedPath, projectName);
+    analysisText = generateLocalAnalysisText(stack, fileTree);
+  } else {
+    // ── AI-powered analysis via Claude API ────────────────────────────────
+    const client = new Anthropic({ apiKey: anthropicApiKey });
+    try {
     const response = await client.messages.create({
       model: "claude-opus-4-8",
       max_tokens: 4096,
@@ -257,10 +264,11 @@ export async function analyzeProject(
       .map((b) => b.text)
       .join("\n")
       .trim();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `AI analysis failed: ${msg.slice(0, 200)}` };
-  }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false, error: `AI analysis failed: ${msg.slice(0, 200)}` };
+    }
+  } // end if/else api key
 
   // Create workspace
   const wsResult = await createWorkspace({
