@@ -2,7 +2,7 @@ import { listWorkspaces } from "@/lib/services/workspace.service";
 
 export const dynamic = "force-dynamic";
 import WorkspaceCard from "@/components/workspace/WorkspaceCard";
-import { Plus, FolderOpen } from "lucide-react";
+import { Plus, FolderOpen, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default async function WorkspacesPage() {
@@ -21,13 +21,22 @@ export default async function WorkspacesPage() {
               : "Each workspace is a learning environment for one project, topic, or goal."}
           </p>
         </div>
-        <Link
-          href="/workspaces/new"
-          className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold px-3 py-2 rounded-md transition-colors"
-        >
-          <Plus size={13} />
-          New Workspace
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/workspaces/import"
+            className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+          >
+            <Sparkles size={13} />
+            Import Project
+          </Link>
+          <Link
+            href="/workspaces/new"
+            className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+          >
+            <Plus size={13} />
+            New Workspace
+          </Link>
+        </div>
       </div>
 
       {/* Workspace grid */}
