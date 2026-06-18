@@ -354,10 +354,14 @@ export async function analyzeProject(
     if (r.ok) questionsCreated++;
   }
 
-  // Parse + save CS concepts (only from the concepts section)
-  const conceptSection =
-    analysisText.split("**5 KEY CS CONCEPTS")[1]?.split("**")[0] ?? "";
-  const cRegex = /- ([^(]+)\s*\(([^)]+)\):\s*(.+)/g;
+  // Parse + save CS concepts (only from the concepts section).
+  // Use extractSection so the full "**5 KEY CS CONCEPTS IN THIS PROJECT**"
+  // header is matched correctly (a naive split drops the concept lines).
+  const conceptSection = extractSection(analysisText, "5 KEY CS CONCEPTS");
+  // Lazy name match so a concept name that itself contains parens — e.g.
+  // "Server-Side Rendering (SSR) (Web Architecture): ..." — locks onto the
+  // trailing "(type):" group rather than the first paren in the name.
+  const cRegex = /- (.+?)\s*\(([^()]+)\):\s*(.+)/g;
   let cMatch;
   while ((cMatch = cRegex.exec(conceptSection)) !== null) {
     const r = await createConceptLink(workspaceId, {

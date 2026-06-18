@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/client";
 import { learningMaps } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
 import type {
   CreateLearningMapInput,
@@ -149,6 +149,25 @@ export async function createLearningMapWithContent(
     return { ok: true, data: toPresentation(raw) };
   } catch {
     return { ok: false, error: "Failed to create learning map", code: "DB_ERROR" };
+  }
+}
+
+// Aggregate view — all maps across every workspace (most recently updated first)
+export async function getAllLearningMaps(): Promise<
+  ServiceResult<LearningMap[]>
+> {
+  try {
+    const rows = await db
+      .select()
+      .from(learningMaps)
+      .orderBy(desc(learningMaps.updatedAt));
+    return { ok: true, data: rows.map(toPresentation) };
+  } catch {
+    return {
+      ok: false,
+      error: "Failed to fetch learning maps",
+      code: "DB_ERROR",
+    };
   }
 }
 
