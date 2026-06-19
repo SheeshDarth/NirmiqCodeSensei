@@ -105,9 +105,6 @@ export default async function DSABridgePage({
         </div>
       )}
 
-      {/* Add form */}
-      <AddConceptLinkForm createAction={boundCreateAction} />
-
       {/* Link list */}
       {links.length === 0 ? (
         <div className="bg-[#0d1117] border border-zinc-800 border-dashed rounded-lg p-10 text-center">
@@ -118,7 +115,8 @@ export default async function DSABridgePage({
             No concept links yet
           </h2>
           <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-            Pick any feature you built and ask: &ldquo;what data structure or algorithm makes this work?&rdquo; Link it above.
+            Re-import this project to auto-generate concept links, or add your own in the
+            &ldquo;Add your own&rdquo; section below.
           </p>
         </div>
       ) : (
@@ -174,6 +172,17 @@ export default async function DSABridgePage({
           </div>
         </div>
       )}
+
+      {/* Add your own — optional manual concept links on top of the auto-generated ones */}
+      <div className="space-y-3 pt-4 border-t border-zinc-800/60">
+        <div>
+          <h2 className="text-sm font-medium text-zinc-400">Add your own</h2>
+          <p className="text-xs text-zinc-600 mt-0.5">
+            Concept links are generated from the project automatically. Optionally link your own.
+          </p>
+        </div>
+        <AddConceptLinkForm createAction={boundCreateAction} />
+      </div>
     </div>
   );
 }

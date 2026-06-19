@@ -115,7 +115,8 @@ export default async function LearningMapPage({
 
             {map.modules.length === 0 && (
               <p className="text-xs text-zinc-600 py-2">
-                No modules yet. Add your first module below.
+                No modules yet — re-import this project to auto-generate them, or add your own in the
+                &ldquo;Add your own&rdquo; section below.
               </p>
             )}
 
@@ -129,12 +130,6 @@ export default async function LearningMapPage({
                 />
               ))}
             </div>
-
-            <AddModuleForm
-              workspaceId={workspaceId}
-              mapId={map.id}
-              action={addModuleAction}
-            />
           </div>
 
           {/* Checkpoints */}
@@ -182,12 +177,6 @@ export default async function LearningMapPage({
                 ))}
               </ul>
             )}
-
-            <AddCheckpointForm
-              workspaceId={workspaceId}
-              mapId={map.id}
-              action={addCheckpointAction}
-            />
           </div>
 
           {/* Full analysis reference */}
@@ -206,6 +195,27 @@ export default async function LearningMapPage({
               </div>
             </details>
           )}
+
+          {/* Add your own — optional manual additions on top of the auto-generated map */}
+          <div className="space-y-3 pt-4 border-t border-zinc-800/60">
+            <div>
+              <h3 className="text-sm font-medium text-zinc-400">Add your own</h3>
+              <p className="text-xs text-zinc-600 mt-0.5">
+                The map above is generated from the project automatically. Optionally add your own
+                modules or checkpoints.
+              </p>
+            </div>
+            <AddModuleForm
+              workspaceId={workspaceId}
+              mapId={map.id}
+              action={addModuleAction}
+            />
+            <AddCheckpointForm
+              workspaceId={workspaceId}
+              mapId={map.id}
+              action={addCheckpointAction}
+            />
+          </div>
         </>
       )}
     </div>

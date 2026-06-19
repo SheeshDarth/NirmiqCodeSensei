@@ -149,9 +149,49 @@ Should we build a VS Code extension, CLI tool, MCP server, or all three? What is
 
 ---
 
+### REVIEW-003 — Make GitHub import fully auto-populate the learning experience
+
+**Date:** 2026-06-19
+**Phase:** Post-MVP — plug-and-play import companion
+**Decision:** When a repo is imported, every learning surface (learning map, DSA bridge, explain-back, overview) must be auto-generated from the repo + metadata. The user must never be required to manually fill content.
+
+**Question Asked:**
+After importing a repo, the learning-map and DSA-bridge pages still presented "Add Module / Add Checkpoint / Add Concept" as the primary action, implying manual data entry — the opposite of the product promise ("the app explains the project to you"). What should change?
+
+**Council Synthesis:**
+
+**Recommendation:** Keep the working pipeline and data model. The import already auto-populates (workspace + 10 questions + 5 concepts + learning map). The real gaps were: (a) two workspaces predated the import bug-fixes and were half-empty; (b) the auto-map didn't carry the CS concepts as module tags; (c) the feature pages led with manual-entry forms and empty-state copy that implied manual filling.
+
+**Fix:** clear the stale workspaces; route all analyzer output into the map (section modules + CS-concept chips on the architecture module + understand-area checkpoints + full raw analysis); present auto-generated content first and demote the manual forms into a clearly separated, collapsed "Add your own" section; make empty-state copy point to import, not manual entry.
+
+**Risks:**
+- Re-import loses manual edits on stale workspaces — negligible, they were empty; deleted with confirmation.
+- GitHub clone path less-tested than local path — mitigated by an end-to-end clone→analyze→populate verification.
+- Over-stuffing the map — mitigated by capping concept chips and keeping summaries short.
+
+**Simplest Path:**
+1. Verify GitHub-URL import end-to-end on a small public repo.
+2. Delete the two stale workspaces (with confirmation).
+3. Enrich `buildLearningMapContent` — attach parsed CS concept names to the architecture module.
+4. Learning-map & DSA-bridge pages: content-first; manual forms moved into a separate collapsed "Add your own" section; import-aware empty states.
+5. Ship clean: lint → typecheck → build → manual re-import check.
+
+**What NOT to Build Yet:**
+- No per-file deep / AST analysis — section-based analysis is enough for MVP.
+- No new DB tables or schema changes — everything needed is already stored.
+- No AI requirement — the local analyzer must keep populating everything with no API key.
+
+**Manual forms — explicitly KEPT (do not remove, do not rebuild):**
+The "Add Module", "Add Checkpoint", and "Link a Concept" forms stay in the product. They are NOT removed and the editor is NOT rebuilt — they are simply demoted into a separate, collapsed "Add your own" section so users can still add their own notes on top of the auto-generated content. Auto-generation is the default; manual entry is the optional supplement.
+
+**Status:** ✅ Accepted — implemented (import enrichment + content-first UI + stale-workspace cleanup)
+
+---
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
 |----|----------|---------|-------|
 | REVIEW-001 | Stack: Next.js + SQLite + Drizzle | ✅ Accepted | 0 |
 | REVIEW-002 | MCP server + CLI; no VS Code extension; security hardening | ✅ Accepted | Post-MVP |
+| REVIEW-003 | Import auto-populates all surfaces; content-first UI; manual forms kept but collapsed | ✅ Accepted | Post-MVP |

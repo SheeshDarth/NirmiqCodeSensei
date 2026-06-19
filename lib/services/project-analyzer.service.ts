@@ -186,21 +186,33 @@ function parseUnderstandAreas(text: string): string[] {
   return results.slice(0, 5);
 }
 
+function parseConceptNames(text: string): string[] {
+  const section = extractSection(text, "5 KEY CS CONCEPTS");
+  const names: string[] = [];
+  const re = /- (.+?)\s*\(([^()]+)\):/g;
+  let m;
+  while ((m = re.exec(section)) !== null) names.push(m[1].trim());
+  return names.slice(0, 8);
+}
+
 function buildLearningMapContent(analysisText: string, projectName: string) {
   const whatItDoes = extractSection(analysisText, "WHAT THIS PROJECT DOES");
   const techStack  = extractSection(analysisText, "TECH STACK");
   const howItWorks = extractSection(analysisText, "HOW IT WORKS");
   const keyFiles   = extractSection(analysisText, "KEY FILES AND WHAT THEY DO");
   const riskMap    = extractSection(analysisText, "WHAT COULD BREAK AND WHY");
+  const conceptNames = parseConceptNames(analysisText);
 
   const modules: Array<{
     title: string;
     summary: string;
     difficulty: "beginner" | "intermediate" | "advanced";
+    concepts?: string[];
   }> = [];
 
   if (techStack)  modules.push({ title: "Tech Stack & Dependencies", summary: techStack,  difficulty: "beginner" });
-  if (howItWorks) modules.push({ title: "How It Works",              summary: howItWorks, difficulty: "intermediate" });
+  // Attach the parsed CS concepts to the architecture module so they surface as chips
+  if (howItWorks) modules.push({ title: "How It Works",              summary: howItWorks, difficulty: "intermediate", concepts: conceptNames });
   if (keyFiles)   modules.push({ title: "Key Files",                 summary: keyFiles,   difficulty: "beginner" });
   if (riskMap)    modules.push({ title: "Risk Map — What Could Break", summary: riskMap,  difficulty: "advanced" });
 
