@@ -9,7 +9,7 @@ import CreateMapForm from "@/components/learning-map/CreateMapForm";
 import AddModuleForm from "@/components/learning-map/AddModuleForm";
 import ModuleCard from "@/components/learning-map/ModuleCard";
 import AddCheckpointForm from "@/components/learning-map/AddCheckpointForm";
-import KnowledgeGraph from "@/components/learning-map/KnowledgeGraph";
+import KnowledgeGraphLoader from "@/components/learning-map/KnowledgeGraphLoader";
 import {
   createMapAction,
   addModuleAction,
@@ -110,7 +110,7 @@ export default async function LearningMapPage({
           </div>
 
           {/* Interactive knowledge graph */}
-          <KnowledgeGraph data={graph} />
+          <KnowledgeGraphLoader data={graph} />
 
           {/* Modules */}
           <div className="space-y-3">
