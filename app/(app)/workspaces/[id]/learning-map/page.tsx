@@ -1,5 +1,7 @@
 import { getLearningMapByWorkspaceId } from "@/lib/services/learning-map.service";
 import { getWorkspaceById } from "@/lib/services/workspace.service";
+import { getConceptLinksByWorkspaceId } from "@/lib/services/concept-link.service";
+import { buildKnowledgeGraph } from "@/lib/services/knowledge-graph.service";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckSquare, Square, Sparkles, FileText } from "lucide-react";
 import Link from "next/link";
@@ -7,6 +9,7 @@ import CreateMapForm from "@/components/learning-map/CreateMapForm";
 import AddModuleForm from "@/components/learning-map/AddModuleForm";
 import ModuleCard from "@/components/learning-map/ModuleCard";
 import AddCheckpointForm from "@/components/learning-map/AddCheckpointForm";
+import KnowledgeGraph from "@/components/learning-map/KnowledgeGraph";
 import {
   createMapAction,
   addModuleAction,
@@ -23,18 +26,22 @@ export default async function LearningMapPage({
 }) {
   const { id: workspaceId } = await params;
 
-  const [wsResult, mapResult] = await Promise.all([
+  const [wsResult, mapResult, clResult] = await Promise.all([
     getWorkspaceById(workspaceId),
     getLearningMapByWorkspaceId(workspaceId),
+    getConceptLinksByWorkspaceId(workspaceId),
   ]);
 
   if (!wsResult.ok) notFound();
 
   const workspace = wsResult.data;
   const map = mapResult.ok ? mapResult.data : null;
+  const conceptLinks = clResult.ok ? clResult.data : [];
 
   const completedCheckpoints = map?.checkpoints.filter((c) => c.completed).length ?? 0;
   const totalCheckpoints = map?.checkpoints.length ?? 0;
+
+  const graph = buildKnowledgeGraph(workspace.title, map, conceptLinks);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -101,6 +108,9 @@ export default async function LearningMapPage({
               </div>
             )}
           </div>
+
+          {/* Interactive knowledge graph */}
+          <KnowledgeGraph data={graph} />
 
           {/* Modules */}
           <div className="space-y-3">
