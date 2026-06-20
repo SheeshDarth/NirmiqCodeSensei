@@ -29,6 +29,9 @@ export default function Topbar({ activeWorkspace }: TopbarProps) {
           type="text"
           placeholder="Search..."
           className="bg-transparent text-xs text-zinc-300 placeholder-zinc-600 outline-none w-full"
+          // Browser form-filler extensions inject attributes (e.g. fdprocessedid)
+          // before hydration; suppress the resulting attribute mismatch warning.
+          suppressHydrationWarning
         />
       </div>
 
@@ -37,6 +40,7 @@ export default function Topbar({ activeWorkspace }: TopbarProps) {
         disabled
         title="Export — available in Phase 8"
         className="flex items-center gap-1.5 text-xs text-zinc-600 px-2 py-1.5 rounded-md cursor-not-allowed"
+        suppressHydrationWarning
       >
         <Download size={13} />
         <span>Export</span>
