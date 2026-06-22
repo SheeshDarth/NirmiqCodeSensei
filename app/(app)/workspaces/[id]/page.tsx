@@ -16,6 +16,7 @@ import {
   Activity,
 } from "lucide-react";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils";
 
 const TYPE_META = {
   project: { label: "Project", icon: FolderOpen, color: "text-cyan-400", bg: "bg-cyan-500/10" },
@@ -30,14 +31,6 @@ const STATUS_COLOR = {
   completed: "text-cyan-400",
   archived: "text-zinc-600",
 } as const;
-
-function formatDate(ms: number) {
-  return new Date(ms).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export default async function WorkspaceDetailPage({
   params,
@@ -122,7 +115,7 @@ export default async function WorkspaceDetailPage({
           </div>
         </div>
 
-        <p className="text-xs text-zinc-700 mt-3">Created {formatDate(ws.createdAt)}</p>
+        <p className="text-xs text-zinc-700 mt-3">Created {formatDate(ws.createdAt, { month: "long", day: "numeric", year: "numeric" })}</p>
       </div>
 
       {/* Sections */}

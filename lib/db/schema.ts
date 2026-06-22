@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 export const workspaces = sqliteTable("workspaces", {
   id: text("id")
@@ -34,7 +34,6 @@ export const learningMaps = sqliteTable("learning_maps", {
   title: text("title").notNull(),
   summary: text("summary"),
   modulesJson: text("modules_json").notNull().default("[]"),
-  conceptsJson: text("concepts_json").notNull().default("[]"),
   checkpointsJson: text("checkpoints_json").notNull().default("[]"),
   analysisRaw: text("analysis_raw"),
   // Architecture/workflow graph derived from real code (nodes + edges JSON)
@@ -97,26 +96,30 @@ export const debugLogs = sqliteTable("debug_logs", {
     .$defaultFn(() => Date.now()),
 });
 
-export const dailyLogs = sqliteTable("daily_logs", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  workspaceId: text("workspace_id")
-    .notNull()
-    .references(() => workspaces.id, { onDelete: "cascade" }),
-  date: text("date").notNull(),
-  builtToday: text("built_today"),
-  understoodToday: text("understood_today"),
-  unclearTopics: text("unclear_topics"),
-  bugsFaced: text("bugs_faced"),
-  nextAction: text("next_action"),
-  createdAt: integer("created_at")
-    .notNull()
-    .$defaultFn(() => Date.now()),
-  updatedAt: integer("updated_at")
-    .notNull()
-    .$defaultFn(() => Date.now()),
-});
+export const dailyLogs = sqliteTable(
+  "daily_logs",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    builtToday: text("built_today"),
+    understoodToday: text("understood_today"),
+    unclearTopics: text("unclear_topics"),
+    bugsFaced: text("bugs_faced"),
+    nextAction: text("next_action"),
+    createdAt: integer("created_at")
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    updatedAt: integer("updated_at")
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [unique("daily_logs_workspace_date").on(t.workspaceId, t.date)]
+);
 
 export const sessionLogs = sqliteTable("session_logs", {
   id: text("id")

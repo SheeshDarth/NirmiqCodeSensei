@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/client";
 import { dailyLogs } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
 import type { CreateDailyLogInput } from "@/lib/validators/daily-log.schema";
 
@@ -11,6 +11,15 @@ export async function createDailyLog(
   input: CreateDailyLogInput
 ): Promise<ServiceResult<DailyLog>> {
   try {
+    const [existing] = await db
+      .select({ id: dailyLogs.id })
+      .from(dailyLogs)
+      .where(and(eq(dailyLogs.workspaceId, workspaceId), eq(dailyLogs.date, input.date)))
+      .limit(1);
+    if (existing) {
+      return { ok: false, error: "A log for this date already exists", code: "DUPLICATE" };
+    }
+
     const [log] = await db
       .insert(dailyLogs)
       .values({
@@ -58,7 +67,8 @@ export async function getAllDailyLogs(): Promise<ServiceResult<DailyLog[]>> {
     const logs = await db
       .select()
       .from(dailyLogs)
-      .orderBy(desc(dailyLogs.createdAt));
+      .orderBy(desc(dailyLogs.createdAt))
+      .limit(50);
     return { ok: true, data: logs };
   } catch {
     return { ok: false, error: "Failed to fetch daily logs", code: "DB_ERROR" };

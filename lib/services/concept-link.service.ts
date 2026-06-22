@@ -104,7 +104,8 @@ export async function getAllConceptLinks(): Promise<ServiceResult<ConceptLink[]>
     const links = await db
       .select()
       .from(conceptLinks)
-      .orderBy(desc(conceptLinks.createdAt));
+      .orderBy(desc(conceptLinks.createdAt))
+      .limit(50);
     return { ok: true, data: links };
   } catch {
     return {

@@ -104,11 +104,6 @@ export async function generateWorkspaceMarkdown(
       lines.push("");
     }
 
-    if (map.concepts.length > 0) {
-      lines.push(`**Core Concepts:** ${map.concepts.join(", ")}`);
-      lines.push("");
-    }
-
     if (map.modules.length > 0) {
       lines.push("### Modules");
       lines.push("");
