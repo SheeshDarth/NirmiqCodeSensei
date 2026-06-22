@@ -44,6 +44,18 @@ const KEY_FILES = [
 // Validate GitHub URL — only HTTPS GitHub URLs allowed
 const GITHUB_URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?$/;
 
+// Block known OS system directories to prevent accidental sensitive-file capture
+const BLOCKED_PATH_PREFIXES = [
+  "/etc", "/sys", "/proc", "/usr", "/bin", "/sbin", "/boot", "/dev", "/lib",
+  "/System", "/private/etc",
+  "C:\\Windows", "C:\\Program Files", "C:\\Program Files (x86)",
+].map((p) => path.normalize(p).toLowerCase());
+
+function isSystemPath(p: string): boolean {
+  const normalized = path.normalize(p).toLowerCase();
+  return BLOCKED_PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
+
 export const IMPORTED_PROJECTS_DIR = path.resolve(
   process.cwd(),
   "data",
@@ -243,6 +255,13 @@ export async function analyzeProject(
   }
 
   const resolvedPath = path.resolve(projectPath);
+
+  if (isSystemPath(resolvedPath)) {
+    return {
+      ok: false,
+      error: `Import blocked: "${resolvedPath}" is a system directory. Choose a project folder inside your home or workspace directory.`,
+    };
+  }
   const projectName = options.workspaceName ?? path.basename(resolvedPath);
 
   // Gather context

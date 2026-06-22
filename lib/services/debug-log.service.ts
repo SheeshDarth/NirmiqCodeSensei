@@ -112,7 +112,8 @@ export async function getAllDebugLogs(): Promise<ServiceResult<DebugLog[]>> {
     const logs = await db
       .select()
       .from(debugLogs)
-      .orderBy(desc(debugLogs.createdAt));
+      .orderBy(desc(debugLogs.createdAt))
+      .limit(50);
     return { ok: true, data: logs };
   } catch {
     return { ok: false, error: "Failed to fetch debug logs", code: "DB_ERROR" };

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/client";
-import { learningMaps } from "@/lib/db/schema";
+import { learningMaps, workspaces } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
 import type {
@@ -29,10 +29,9 @@ export type RawLearningMap = typeof learningMaps.$inferSelect;
 
 export type LearningMap = Omit<
   RawLearningMap,
-  "modulesJson" | "conceptsJson" | "checkpointsJson"
+  "modulesJson" | "checkpointsJson"
 > & {
   modules: LearningModule[];
-  concepts: string[];
   checkpoints: Checkpoint[];
 };
 
@@ -54,19 +53,10 @@ function parseCheckpoints(json: string): Checkpoint[] {
   }
 }
 
-function parseConcepts(json: string): string[] {
-  try {
-    return JSON.parse(json) as string[];
-  } catch {
-    return [];
-  }
-}
-
 function toPresentation(raw: RawLearningMap): LearningMap {
   return {
     ...raw,
     modules: parseModules(raw.modulesJson),
-    concepts: parseConcepts(raw.conceptsJson),
     checkpoints: parseCheckpoints(raw.checkpointsJson),
   };
 }
@@ -347,6 +337,17 @@ export async function toggleCheckpoint(
       })
       .where(eq(learningMaps.id, mapId))
       .returning();
+
+    // Propagate checkpoint completion rate → workspace.progressScore
+    if (checkpoints.length > 0) {
+      const completed = checkpoints.filter((c) => c.completed).length;
+      const score = Math.round((completed / checkpoints.length) * 100);
+      await db
+        .update(workspaces)
+        .set({ progressScore: score, updatedAt: Date.now() })
+        .where(eq(workspaces.id, raw.workspaceId));
+    }
+
     return { ok: true, data: toPresentation(updated) };
   } catch {
     return {

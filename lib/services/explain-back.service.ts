@@ -88,7 +88,8 @@ export async function getAllQuestions(): Promise<ServiceResult<Question[]>> {
     const questions = await db
       .select()
       .from(explainBackQuestions)
-      .orderBy(desc(explainBackQuestions.createdAt));
+      .orderBy(desc(explainBackQuestions.createdAt))
+      .limit(50);
     return { ok: true, data: questions };
   } catch {
     return { ok: false, error: "Failed to fetch questions", code: "DB_ERROR" };
