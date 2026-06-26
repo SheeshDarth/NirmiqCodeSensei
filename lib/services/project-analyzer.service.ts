@@ -10,6 +10,8 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import * as z from "zod/v4";
 import { readdirSync, readFileSync, existsSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import path from "path";
@@ -78,6 +80,29 @@ export interface AnalysisResult {
   questionsCreated: number;
   conceptsCreated: number;
 }
+
+// Structured-output schema for AI analysis. Passed to messages.parse() via
+// zodOutputFormat so the model returns typed JSON the code persists directly —
+// no fragile regex parsing of prose (the old failure mode).
+const AnalysisSchema = z.object({
+  whatItDoes: z.string(),
+  techStack: z.array(z.object({ tech: z.string(), role: z.string() })),
+  howItWorks: z.string(),
+  keyFiles: z.array(z.object({ file: z.string(), role: z.string() })),
+  understandAreas: z.array(z.string()),
+  questions: z.array(
+    z.object({
+      difficulty: z.enum(["beginner", "intermediate", "advanced"]),
+      question: z.string(),
+    })
+  ),
+  concepts: z.array(
+    z.object({ name: z.string(), type: z.string(), explanation: z.string() })
+  ),
+  risks: z.array(z.string()),
+});
+
+type ParsedAnalysis = z.infer<typeof AnalysisSchema>;
 
 // ── File helpers ───────────────────────────────────────────────────────────────
 
@@ -211,13 +236,58 @@ function parseConceptNames(text: string): string[] {
   return names.slice(0, 8);
 }
 
-function buildLearningMapContent(analysisText: string, projectName: string) {
-  const whatItDoes = extractSection(analysisText, "WHAT THIS PROJECT DOES");
-  const techStack  = extractSection(analysisText, "TECH STACK");
-  const howItWorks = extractSection(analysisText, "HOW IT WORKS");
-  const keyFiles   = extractSection(analysisText, "KEY FILES AND WHAT THEY DO");
-  const riskMap    = extractSection(analysisText, "WHAT COULD BREAK AND WHY");
-  const conceptNames = parseConceptNames(analysisText);
+/** Render a structured analysis back into the readable markdown stored as analysisRaw. */
+function renderAnalysisMarkdown(a: ParsedAnalysis): string {
+  return [
+    "**WHAT THIS PROJECT DOES**",
+    a.whatItDoes,
+    "",
+    "**TECH STACK**",
+    ...a.techStack.map((t) => `- ${t.tech}: ${t.role}`),
+    "",
+    "**HOW IT WORKS**",
+    a.howItWorks,
+    "",
+    "**KEY FILES AND WHAT THEY DO**",
+    ...a.keyFiles.map((f) => `- ${f.file}: ${f.role}`),
+    "",
+    "**WHAT YOU NEED TO UNDERSTAND**",
+    ...a.understandAreas.map((x, i) => `${i + 1}. ${x}`),
+    "",
+    "**10 EXPLAIN-BACK QUESTIONS**",
+    ...a.questions.map((q, i) => `Q${i + 1} (${q.difficulty}): ${q.question}`),
+    "",
+    "**5 KEY CS CONCEPTS IN THIS PROJECT**",
+    ...a.concepts.map((c) => `- ${c.name} (${c.type}): ${c.explanation}`),
+    "",
+    "**WHAT COULD BREAK AND WHY**",
+    ...a.risks.map((r) => `- ${r}`),
+  ].join("\n");
+}
+
+function buildLearningMapContent(
+  analysisText: string,
+  projectName: string,
+  structured?: ParsedAnalysis | null
+) {
+  const whatItDoes = structured
+    ? structured.whatItDoes
+    : extractSection(analysisText, "WHAT THIS PROJECT DOES");
+  const techStack = structured
+    ? structured.techStack.map((t) => `- ${t.tech}: ${t.role}`).join("\n")
+    : extractSection(analysisText, "TECH STACK");
+  const howItWorks = structured
+    ? structured.howItWorks
+    : extractSection(analysisText, "HOW IT WORKS");
+  const keyFiles = structured
+    ? structured.keyFiles.map((f) => `- ${f.file}: ${f.role}`).join("\n")
+    : extractSection(analysisText, "KEY FILES AND WHAT THEY DO");
+  const riskMap = structured
+    ? structured.risks.map((r) => `- ${r}`).join("\n")
+    : extractSection(analysisText, "WHAT COULD BREAK AND WHY");
+  const conceptNames = structured
+    ? structured.concepts.map((c) => c.name)
+    : parseConceptNames(analysisText);
 
   const modules: Array<{
     title: string;
@@ -227,12 +297,14 @@ function buildLearningMapContent(analysisText: string, projectName: string) {
   }> = [];
 
   if (techStack)  modules.push({ title: "Tech Stack & Dependencies", summary: techStack,  difficulty: "beginner" });
-  // Attach the parsed CS concepts to the architecture module so they surface as chips
+  // Attach the CS concepts to the architecture module so they surface as chips
   if (howItWorks) modules.push({ title: "How It Works",              summary: howItWorks, difficulty: "intermediate", concepts: conceptNames });
   if (keyFiles)   modules.push({ title: "Key Files",                 summary: keyFiles,   difficulty: "beginner" });
   if (riskMap)    modules.push({ title: "Risk Map — What Could Break", summary: riskMap,  difficulty: "advanced" });
 
-  const checkpoints = parseUnderstandAreas(analysisText);
+  const checkpoints = structured
+    ? structured.understandAreas.slice(0, 5)
+    : parseUnderstandAreas(analysisText);
 
   return {
     title: `${projectName} — Project Analysis`,
@@ -269,6 +341,7 @@ export async function analyzeProject(
   const keyFileContents = readKeyFiles(resolvedPath).slice(0, 8000);
 
   let analysisText: string;
+  let structured: ParsedAnalysis | null = null;
 
   if (!anthropicApiKey) {
     // ── Local heuristic analysis (no API key needed) ───────────────────────
@@ -278,82 +351,57 @@ export async function analyzeProject(
     // ── AI-powered analysis via Claude API ────────────────────────────────
     const client = new Anthropic({ apiKey: anthropicApiKey });
     try {
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 4096,
-      thinking: { type: "adaptive" },
-      messages: [
-        {
-          role: "user",
-          content: [
-            `## Project: ${projectName}`,
-            `## Path: ${resolvedPath}`,
-            "",
-            "## File tree",
-            "```",
-            fileTree,
-            "```",
-            "",
-            "## Key files",
-            keyFileContents,
-            "",
-            "You are a senior software engineer and educator. Analyse this project completely.",
-            "The person reading your output built this with AI coding tools and may not fully",
-            "understand what they built. Write for them — plain English, no jargon unexplained.",
-            "",
-            "Produce a structured analysis in EXACTLY this format (keep the bold headers verbatim):",
-            "",
-            "**WHAT THIS PROJECT DOES**",
-            "[2-3 plain English sentences. What problem does it solve?]",
-            "",
-            "**TECH STACK**",
-            "- [technology]: [what it does in this specific project, in one plain sentence]",
-            "",
-            "**HOW IT WORKS**",
-            "[4-6 sentences describing how the pieces connect. Use analogies where helpful.]",
-            "",
-            "**KEY FILES AND WHAT THEY DO**",
-            "- [filename]: [what this file's job is, in plain English]",
-            "",
-            "**WHAT YOU NEED TO UNDERSTAND** (5 areas, ordered by importance)",
-            "1. [Area]: [Why this matters for this project — 1-2 sentences]",
-            "2. [Area]: [Why this matters for this project — 1-2 sentences]",
-            "3. [Area]: [Why this matters for this project — 1-2 sentences]",
-            "4. [Area]: [Why this matters for this project — 1-2 sentences]",
-            "5. [Area]: [Why this matters for this project — 1-2 sentences]",
-            "",
-            "**10 EXPLAIN-BACK QUESTIONS**",
-            "Q1 (beginner): [question]",
-            "Q2 (beginner): [question]",
-            "Q3 (intermediate): [question]",
-            "Q4 (intermediate): [question]",
-            "Q5 (intermediate): [question]",
-            "Q6 (advanced): [question]",
-            "Q7 (advanced): [question]",
-            "Q8 (advanced): [question]",
-            "Q9 (expert): [question]",
-            "Q10 (expert): [question]",
-            "",
-            "**5 KEY CS CONCEPTS IN THIS PROJECT**",
-            "- [concept name] ([type e.g. HashMap/Recursion/REST/Event Loop]): [how it appears in THIS codebase]",
-            "",
-            "**WHAT COULD BREAK AND WHY**",
-            "- [specific fragile spot]: [why and how it could fail]",
-            "",
-            "Be specific to THIS project. Never give generic answers.",
-          ].join("\n"),
-        },
-      ],
-    });
-
-    analysisText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+      const message = await client.messages.parse({
+        model: "claude-opus-4-8",
+        max_tokens: 8192,
+        thinking: { type: "adaptive" },
+        output_config: { format: zodOutputFormat(AnalysisSchema) },
+        messages: [
+          {
+            role: "user",
+            content: [
+              `## Project: ${projectName}`,
+              `## Path: ${resolvedPath}`,
+              "",
+              "## File tree",
+              "```",
+              fileTree,
+              "```",
+              "",
+              "## Key files",
+              keyFileContents,
+              "",
+              "You are a senior software engineer and educator analysing this project for",
+              "someone who built it with AI coding tools and may not fully understand it.",
+              "Write plain English with no unexplained jargon. Be specific to THIS project;",
+              "never give generic answers. Fill every field of the required structure:",
+              "- whatItDoes: 2-3 plain sentences on the problem it solves.",
+              "- techStack: each technology and its role in THIS project.",
+              "- howItWorks: 4-6 sentences on how the pieces connect (analogies welcome).",
+              "- keyFiles: the most important files and each one's job.",
+              "- understandAreas: exactly 5 areas to understand, ordered by importance.",
+              "- questions: exactly 10 explain-back questions, progressively harder; use only",
+              "  the difficulty values beginner, intermediate, advanced (about 2 / 3 / 5).",
+              "- concepts: 5 key CS/DSA concepts and how each appears in THIS codebase.",
+              "- risks: 3 specific fragile spots and why each could fail.",
+            ].join("\n"),
+          },
+        ],
+      });
+      structured = message.parsed_output;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return { ok: false, error: `AI analysis failed: ${msg.slice(0, 200)}` };
+    }
+
+    // Count assertion + fallback: if the structured parse came back empty or
+    // invalid, degrade to the local heuristic rather than persisting nothing.
+    if (structured && structured.questions.length > 0) {
+      analysisText = renderAnalysisMarkdown(structured);
+    } else {
+      structured = null;
+      const stack = detectStack(resolvedPath, projectName);
+      analysisText = generateLocalAnalysisText(stack, fileTree);
     }
   } // end if/else api key
 
@@ -373,39 +421,54 @@ export async function analyzeProject(
   let questionsCreated = 0;
   let conceptsCreated = 0;
 
-  // Parse + save questions
-  const qRegex = /Q(\d+)\s*\((beginner|intermediate|advanced|expert)\):\s*(.+)/gi;
-  let qMatch;
-  while ((qMatch = qRegex.exec(analysisText)) !== null) {
-    const raw = qMatch[2].toLowerCase();
-    const difficulty = (raw === "expert" ? "advanced" : raw) as
-      | "beginner"
-      | "intermediate"
-      | "advanced";
-    const r = await createQuestion(workspaceId, {
-      question: qMatch[3].trim(),
-      difficulty,
-    });
-    if (r.ok) questionsCreated++;
-  }
+  if (structured) {
+    // Persist directly from the typed structured output — no prose parsing.
+    for (const q of structured.questions) {
+      const r = await createQuestion(workspaceId, {
+        question: q.question,
+        difficulty: q.difficulty,
+      });
+      if (r.ok) questionsCreated++;
+    }
+    for (const c of structured.concepts) {
+      const r = await createConceptLink(workspaceId, {
+        projectFeature: `${projectName} codebase`,
+        conceptName: c.name,
+        conceptType: c.type,
+        explanation: c.explanation,
+      });
+      if (r.ok) conceptsCreated++;
+    }
+  } else {
+    // Local fallback path: parse the deterministic template we generated
+    // ourselves (not untrusted LLM freeform), so these regexes are safe.
+    const qRegex = /Q(\d+)\s*\((beginner|intermediate|advanced|expert)\):\s*(.+)/gi;
+    let qMatch;
+    while ((qMatch = qRegex.exec(analysisText)) !== null) {
+      const raw = qMatch[2].toLowerCase();
+      const difficulty = (raw === "expert" ? "advanced" : raw) as
+        | "beginner"
+        | "intermediate"
+        | "advanced";
+      const r = await createQuestion(workspaceId, {
+        question: qMatch[3].trim(),
+        difficulty,
+      });
+      if (r.ok) questionsCreated++;
+    }
 
-  // Parse + save CS concepts (only from the concepts section).
-  // Use extractSection so the full "**5 KEY CS CONCEPTS IN THIS PROJECT**"
-  // header is matched correctly (a naive split drops the concept lines).
-  const conceptSection = extractSection(analysisText, "5 KEY CS CONCEPTS");
-  // Lazy name match so a concept name that itself contains parens — e.g.
-  // "Server-Side Rendering (SSR) (Web Architecture): ..." — locks onto the
-  // trailing "(type):" group rather than the first paren in the name.
-  const cRegex = /- (.+?)\s*\(([^()]+)\):\s*(.+)/g;
-  let cMatch;
-  while ((cMatch = cRegex.exec(conceptSection)) !== null) {
-    const r = await createConceptLink(workspaceId, {
-      projectFeature: `${projectName} codebase`,
-      conceptName: cMatch[1].trim(),
-      conceptType: cMatch[2].trim(),
-      explanation: cMatch[3].trim(),
-    });
-    if (r.ok) conceptsCreated++;
+    const conceptSection = extractSection(analysisText, "5 KEY CS CONCEPTS");
+    const cRegex = /- (.+?)\s*\(([^()]+)\):\s*(.+)/g;
+    let cMatch;
+    while ((cMatch = cRegex.exec(conceptSection)) !== null) {
+      const r = await createConceptLink(workspaceId, {
+        projectFeature: `${projectName} codebase`,
+        conceptName: cMatch[1].trim(),
+        conceptType: cMatch[2].trim(),
+        explanation: cMatch[3].trim(),
+      });
+      if (r.ok) conceptsCreated++;
+    }
   }
 
   // Read the real source code: extract code-grounded DSA findings + build the
@@ -442,7 +505,7 @@ export async function analyzeProject(
   }
 
   // Auto-create Learning Map from analysis (+ the real architecture graph)
-  const mapContent = buildLearningMapContent(analysisText, projectName);
+  const mapContent = buildLearningMapContent(analysisText, projectName, structured);
   await createLearningMapWithContent(workspaceId, { ...mapContent, graphJson });
 
   return {
