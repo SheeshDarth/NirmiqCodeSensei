@@ -224,7 +224,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "nirmiq_generate_questions",
       description:
-        "AI-POWERED: Analyse a code snippet and generate 5 explain-back questions the student should be able to answer, with expected answer points. Requires ANTHROPIC_API_KEY in environment. Call this whenever you write a significant function, class, or feature so the student gets instant review material.",
+        "AI-POWERED: Analyse a code snippet and generate 5 explain-back questions the student should be able to answer, with expected answer points. Requires ANTHROPIC_API_KEY in environment. Call this whenever you write a significant function, class, or feature so the student gets instant review material. Returns suggestions as text — it does NOT save anything; call add_question to persist the ones you want.",
       inputSchema: {
         type: "object",
         properties: {
@@ -243,7 +243,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "nirmiq_suggest_concepts",
       description:
-        "AI-POWERED: Analyse a code snippet and identify the underlying DSA/CS concepts it uses (HashMap, Binary Search, Design Pattern, etc.) with concrete practice tasks. Requires ANTHROPIC_API_KEY. Call this when implementing a feature to show the student what fundamentals are at play.",
+        "AI-POWERED: Analyse a code snippet and identify the underlying DSA/CS concepts it uses (HashMap, Binary Search, Design Pattern, etc.) with concrete practice tasks. Requires ANTHROPIC_API_KEY. Call this when implementing a feature to show the student what fundamentals are at play. Returns suggestions as text — it does NOT save anything; call add_concept_link to persist.",
       inputSchema: {
         type: "object",
         properties: {
@@ -262,7 +262,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "nirmiq_debug_assist",
       description:
-        "AI-POWERED: Analyse an error message and code context to identify the likely root cause, top 3 things to check, a suggested fix, and a prevention rule. Requires ANTHROPIC_API_KEY. Call this when the student hits an error — then use add_debug_log to save the diagnosis permanently.",
+        "AI-POWERED: Analyse an error message and code context to identify the likely root cause, top 3 things to check, a suggested fix, and a prevention rule. Requires ANTHROPIC_API_KEY. Call this when the student hits an error. Returns analysis as text — nothing is saved until you call add_debug_log to record the diagnosis.",
       inputSchema: {
         type: "object",
         properties: {
@@ -321,10 +321,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 // ── Tool execution ─────────────────────────────────────────────────────────────
 
-server.setRequestHandler(CallToolRequestSchema, async (req) => {
-  const { name, arguments: args } = req.params;
-
-  try {
+async function runTool(name: string, args: unknown) {
     switch (name) {
       // ── list_workspaces ──────────────────────────────────────────────────
       case "list_workspaces": {
@@ -418,6 +415,10 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           title: v.title,
           errorMessage: v.error_message,
           suspectedCause: v.suspected_cause,
+          actualCause: v.actual_cause,
+          fixSummary: v.fix_summary,
+          lessonLearned: v.lesson_learned,
+          preventionRule: v.prevention_rule,
         });
         if (!result.ok) return err(result.error);
         return ok(`✅ Debug log created: "${v.title}" (ID: ${result.data.id})\nView at http://127.0.0.1:3000/workspaces/${v.workspace_id}/debug-lab`);
@@ -569,7 +570,24 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       default:
         return err(`Unknown tool: ${name}`);
     }
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (req) => {
+  const { name, arguments: args } = req.params;
+  const startedAt = Date.now();
+
+  try {
+    const result = await runTool(name, args);
+    // Audit trail: log every tool call's outcome to stderr (stdout is reserved
+    // for the MCP protocol). Tool name + outcome + duration only — never args.
+    process.stderr.write(
+      `[audit] ${new Date().toISOString()} tool=${name} outcome=${"isError" in result && result.isError ? "error" : "ok"} ms=${Date.now() - startedAt}\n`
+    );
+    return result;
   } catch (e) {
+    process.stderr.write(
+      `[audit] ${new Date().toISOString()} tool=${name} outcome=exception ms=${Date.now() - startedAt}\n`
+    );
     // Sanitise error message — only surface safe, user-actionable text.
     // Never forward raw stack traces, file paths, or DB internals to the MCP client.
     if (e instanceof z.ZodError) {

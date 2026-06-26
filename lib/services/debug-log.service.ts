@@ -21,6 +21,10 @@ export async function createDebugLog(
         title: input.title,
         errorMessage: input.errorMessage ?? null,
         suspectedCause: input.suspectedCause ?? null,
+        actualCause: input.actualCause ?? null,
+        fixSummary: input.fixSummary ?? null,
+        lessonLearned: input.lessonLearned ?? null,
+        preventionRule: input.preventionRule ?? null,
       })
       .returning();
     return { ok: true, data: log };
