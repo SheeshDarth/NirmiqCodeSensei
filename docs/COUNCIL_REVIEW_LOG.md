@@ -416,7 +416,7 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 **Decision:**
 > Do P5 = workspace deletion + H4 idempotent re-import only. Defer real search, the global session-log view, and the graph migration.
 
-**Status:** ✅ Approved — implementing workspace deletion + H4 (see commit below).
+**Status:** ✅ Implemented (commit 1003d3a). `deleteWorkspace` + `deleteWorkspaceAction` + `DeleteWorkspaceButton` (two-step confirm on the hub header); H4 guard in `analyzeProject` blocks re-import of an already-imported non-archived path. Cascade verified by a throwaway script (zero orphaned child rows after delete); lint + typecheck + build clean. Search / global session-log view / graph migration remain deferred.
 
 ---
 
@@ -429,4 +429,4 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-003 | Import auto-populates all surfaces; content-first UI; manual forms kept but collapsed | ✅ Accepted | Post-MVP |
 | REVIEW-004 | Full architectural audit — 32 issues across 6 severity tiers; fix Tier 1+2 before any new features | ⚠️ Audit — action required | Pre-1.0 |
 | REVIEW-005 | Remediation sequencing — 6 phases (P0–P5); commit P0–P3, defer P4/P5 | ✅ P0–P4 done; P5 gated | Pre-1.0 |
-| REVIEW-006 | P5 feature scope — build workspace deletion + H4 idempotent re-import; defer search/global-log/graph migration | ✅ Approved — implementing | Pre-1.0 |
+| REVIEW-006 | P5 feature scope — build workspace deletion + H4 idempotent re-import; defer search/global-log/graph migration | ✅ Implemented (commit 1003d3a) | Pre-1.0 |
