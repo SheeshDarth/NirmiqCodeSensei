@@ -36,7 +36,10 @@ export const createConceptLinkSchema = z.object({
     .string()
     .min(2, "Concept name must be at least 2 characters")
     .max(200, "Concept name too long"),
-  conceptType: z.string().max(100).optional(),
+  // Enum-enforced on the user form (audit #30). The analyzer service path
+  // intentionally bypasses this schema — its categories ("Data Structure",
+  // "Algorithm", …) and AI-suggested types are free-text by design.
+  conceptType: z.enum(CONCEPT_TYPES).optional(),
   explanation: z.string().max(2000).optional(),
   practiceTask: z.string().max(500).optional(),
 });

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db/client";
-import { learningMaps, workspaces } from "@/lib/db/schema";
+import { learningMaps } from "@/lib/db/schema";
+import { recomputeWorkspaceProgress } from "@/lib/services/workspace.service";
 import { eq, desc } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
 import type {
@@ -339,15 +340,8 @@ export async function toggleCheckpoint(
       .where(eq(learningMaps.id, mapId))
       .returning();
 
-    // Propagate checkpoint completion rate → workspace.progressScore
-    if (checkpoints.length > 0) {
-      const completed = checkpoints.filter((c) => c.completed).length;
-      const score = Math.round((completed / checkpoints.length) * 100);
-      await db
-        .update(workspaces)
-        .set({ progressScore: score, updatedAt: Date.now() })
-        .where(eq(workspaces.id, raw.workspaceId));
-    }
+    // Blended progress: checkpoints + question confidence (REVIEW-008, #26)
+    await recomputeWorkspaceProgress(raw.workspaceId);
 
     return { ok: true, data: toPresentation(updated) };
   } catch {

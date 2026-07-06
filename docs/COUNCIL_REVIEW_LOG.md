@@ -445,6 +445,31 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 
 ---
 
+### REVIEW-008 — Whole-Project Assessment + Correctness Polish Sprint
+
+**Date:** 2026-07-06
+**Trigger:** All 44 audited findings resolved or deferred-by-decision; PR #1 holds the remediation. Full-project review requested ("where to improve and what to change") before merge.
+
+**Measured baseline:** build ~7.1s compile + 4.5s TS; test suite 8/8 in ~18s; local import e2e 127ms (`analyzeCode` 65ms on fixture, caps 300 files/80KB/100 AST); ~11.8k LOC, 13 services, 21 components, 20 routes, 14 runtime deps. **Performance is not the bottleneck — correctness gaps and product cohesion are.**
+
+**Council Synthesis:**
+
+**Recommendation:** Merge PR #1, then one small correctness-polish sprint of three cheap, high-confidence fixes:
+1. **Refresh pulls GitHub clones** — `reanalyzeProject` re-analysed the *stale clone*; now `git pull --ff-only` (best-effort) when the stored path is under `IMPORTED_PROJECTS_DIR` with a `.git` dir.
+2. **Real progress formula (#26)** — `progressScore = 60%·checkpoint completion + 40%·green-confidence ratio` (re-normalized when a part is absent), recomputed on `toggleCheckpoint` AND `submitAnswer` via a shared `recomputeWorkspaceProgress` in workspace.service. Previously answering questions never moved progress.
+3. **`conceptType` enum (#30)** — `z.enum(CONCEPT_TYPES)` in the *form* schema only; the analyzer path keeps free-text (its categories like "Data Structure" are not in the user-facing list), so the service input type widens accordingly.
+
+**Risks:** enum could reject analyzer values → mitigated by widening the service input type (form-only enforcement); formula changes visible numbers → recomputed on next mutation, no backfill; scope creep → hard-stop after these three.
+
+**What NOT to Build Yet:** cross-feature FKs (#27/#28), navigable graph (#29), real search — each needs its own product-scoped review. Graph migration (#12), CI, coverage tooling, Vitest — accepted debt / overkill for a single-user local MVP. True async/streaming import — measured import is fast; the AI path is API-bound and the UI already sets expectations honestly.
+
+**Decision:**
+> Merge PR #1; ship the three-item polish sprint (GitHub-pull on refresh, blended progress formula, conceptType form enum); defer all cohesion/search/graph work behind separate reviews.
+
+**Status:** ✅ Implemented. (1) `reanalyzeProject` now `git pull --ff-only`s clones under `IMPORTED_PROJECTS_DIR` before re-analysing (best-effort; local-path workspaces never touched — pull-failure path is a no-op by design, not separately tested). (2) `recomputeWorkspaceProgress` in workspace.service blends 60% checkpoint completion + 40% green-confidence, called from `toggleCheckpoint` and `submitAnswer`. (3) `conceptType: z.enum(CONCEPT_TYPES)` on the form schema; service input widened so the analyzer's free-text categories still typecheck. Suite extended to **10/10 passing** (blended-progress + enum tests); lint + typecheck + build clean.
+
+---
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
@@ -456,3 +481,4 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-005 | Remediation sequencing — 6 phases (P0–P5); commit P0–P3, defer P4/P5 | ✅ P0–P4 done; P5 gated | Pre-1.0 |
 | REVIEW-006 | P5 feature scope — build workspace deletion + H4 idempotent re-import; defer search/global-log/graph migration | ✅ Implemented (commit 1003d3a) | Pre-1.0 |
 | REVIEW-007 | Import-pipeline tests (#32) — node:test via tsx, zero new deps; no Vitest/Jest/CI | ✅ Implemented — 8/8 passing | Pre-1.0 |
+| REVIEW-008 | Whole-project review — polish sprint: GitHub-pull on refresh, blended progress formula (#26), conceptType form enum (#30); defer cohesion/search/graph | ✅ Implemented — 10/10 tests | Pre-1.0 |
