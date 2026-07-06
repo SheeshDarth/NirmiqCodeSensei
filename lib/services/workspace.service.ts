@@ -1,5 +1,9 @@
 import { db } from "@/lib/db/client";
-import { workspaces } from "@/lib/db/schema";
+import {
+  workspaces,
+  learningMaps,
+  explainBackQuestions,
+} from "@/lib/db/schema";
 import { eq, desc, and, type SQL } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
 import type { CreateWorkspaceInput } from "@/lib/validators/workspace.schema";
@@ -86,6 +90,64 @@ export async function deleteWorkspace(
   }
 }
 
+/**
+ * Recompute and persist workspace progress (REVIEW-008, audit #26):
+ * 60% checkpoint completion + 40% green-confidence ratio on explain-back
+ * questions, re-normalized when a part is absent. Called after
+ * toggleCheckpoint (learning-map.service) and submitAnswer
+ * (explain-back.service). Returns the new score.
+ */
+export async function recomputeWorkspaceProgress(
+  workspaceId: string
+): Promise<ServiceResult<number>> {
+  try {
+    const maps = await db
+      .select({ checkpointsJson: learningMaps.checkpointsJson })
+      .from(learningMaps)
+      .where(eq(learningMaps.workspaceId, workspaceId));
+
+    let cpTotal = 0;
+    let cpDone = 0;
+    for (const m of maps) {
+      try {
+        const cps = JSON.parse(m.checkpointsJson ?? "[]") as Array<{
+          completed?: boolean;
+        }>;
+        cpTotal += cps.length;
+        cpDone += cps.filter((c) => c.completed === true).length;
+      } catch { /* skip malformed checkpoint JSON */ }
+    }
+
+    const qs = await db
+      .select({ confidence: explainBackQuestions.confidence })
+      .from(explainBackQuestions)
+      .where(eq(explainBackQuestions.workspaceId, workspaceId));
+    const qGreen = qs.filter((q) => q.confidence === "green").length;
+
+    const parts: Array<[weight: number, ratio: number]> = [];
+    if (cpTotal > 0) parts.push([0.6, cpDone / cpTotal]);
+    if (qs.length > 0) parts.push([0.4, qGreen / qs.length]);
+    const weightSum = parts.reduce((acc, [w]) => acc + w, 0);
+    const score =
+      weightSum > 0
+        ? Math.round(
+            (parts.reduce((acc, [w, r]) => acc + w * r, 0) / weightSum) * 100
+          )
+        : 0;
+
+    await db
+      .update(workspaces)
+      .set({ progressScore: score, updatedAt: Date.now() })
+      .where(eq(workspaces.id, workspaceId));
+    return { ok: true, data: score };
+  } catch {
+    return {
+      ok: false,
+      error: "Failed to recompute progress",
+      code: "DB_ERROR",
+    };
+  }
+}
+
 // Note: updateWorkspace / archiveWorkspace / calculateWorkspaceProgress were
-// removed as dead code (P4). progressScore is written directly by
-// learning-map.service.ts when checkpoint completion changes.
+// removed as dead code (P4).

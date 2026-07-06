@@ -440,6 +440,24 @@ export async function reanalyzeProject(
     return { ok: false, error: "Refresh blocked: the stored path is a system directory." };
   }
 
+  // GitHub-imported clones live under IMPORTED_PROJECTS_DIR — pull the latest
+  // before re-analysing so "Refresh" reflects the current remote code, not the
+  // clone from import day. Best-effort: if the pull fails (offline, diverged),
+  // we still re-analyse the existing copy. Local-path workspaces are the
+  // user's own working tree and are never touched.
+  if (
+    resolvedPath.startsWith(IMPORTED_PROJECTS_DIR) &&
+    existsSync(path.join(resolvedPath, ".git"))
+  ) {
+    try {
+      execSync("git pull --ff-only", {
+        cwd: resolvedPath,
+        timeout: 30_000,
+        stdio: "pipe",
+      });
+    } catch { /* offline or diverged — analyse the existing clone */ }
+  }
+
   const projectName = ws.data.title;
 
   // Compute fresh analysis BEFORE deleting anything, so a failed re-analysis

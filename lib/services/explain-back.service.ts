@@ -1,4 +1,5 @@
 import { db } from "@/lib/db/client";
+import { recomputeWorkspaceProgress } from "@/lib/services/workspace.service";
 import { explainBackQuestions } from "@/lib/db/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
 import type { ServiceResult } from "@/lib/types";
@@ -113,6 +114,10 @@ export async function submitAnswer(
       .returning();
     if (!updated)
       return { ok: false, error: "Question not found", code: "NOT_FOUND" };
+
+    // Answering questions now moves workspace progress too (REVIEW-008, #26)
+    await recomputeWorkspaceProgress(updated.workspaceId);
+
     return { ok: true, data: updated };
   } catch {
     return {

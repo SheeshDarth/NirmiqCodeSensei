@@ -154,6 +154,58 @@ test("reanalyzeProject: replaces analysis artifacts, keeps user data", async () 
   assert.equal(maps.length, 1, "exactly one learning map after refresh");
 });
 
+// ── blended progress formula (REVIEW-008, #26) ───────────────────────────────
+test("progress: checkpoints AND green answers move progressScore", async () => {
+  const { getLearningMapByWorkspaceId, toggleCheckpoint } = await import(
+    "@/lib/services/learning-map.service"
+  );
+  const { submitAnswer } = await import("@/lib/services/explain-back.service");
+
+  const mapRes = await getLearningMapByWorkspaceId(workspaceId);
+  assert.ok(mapRes.ok && mapRes.data, "learning map exists");
+  if (!mapRes.ok || !mapRes.data) return;
+  assert.ok(mapRes.data.checkpoints.length > 0, "fixture map has checkpoints");
+
+  const t = await toggleCheckpoint(mapRes.data.id, mapRes.data.checkpoints[0].id);
+  assert.ok(t.ok);
+
+  let [ws] = await db.select().from(schema.workspaces)
+    .where(eq(schema.workspaces.id, workspaceId));
+  const afterCheckpoint = ws.progressScore;
+  assert.ok(afterCheckpoint > 0, "checkpoint completion moves progress");
+
+  const [q] = await db.select().from(schema.explainBackQuestions)
+    .where(eq(schema.explainBackQuestions.workspaceId, workspaceId)).limit(1);
+  const a = await submitAnswer(q.id, {
+    userAnswer: "test answer",
+    confidence: "green",
+  });
+  assert.ok(a.ok);
+
+  [ws] = await db.select().from(schema.workspaces)
+    .where(eq(schema.workspaces.id, workspaceId));
+  assert.ok(
+    ws.progressScore > afterCheckpoint,
+    `green answer raises blended progress (${afterCheckpoint} -> ${ws.progressScore})`
+  );
+});
+
+// ── conceptType form enum (REVIEW-008, #30) ──────────────────────────────────
+test("createConceptLinkSchema: conceptType enum-enforced on the form path", async () => {
+  const { createConceptLinkSchema } = await import(
+    "@/lib/validators/concept-link.schema"
+  );
+  const base = { projectFeature: "auth flow", conceptName: "Hashing" };
+  assert.equal(
+    createConceptLinkSchema.safeParse({ ...base, conceptType: "HashMap" }).success,
+    true
+  );
+  assert.equal(
+    createConceptLinkSchema.safeParse({ ...base, conceptType: "Banana" }).success,
+    false
+  );
+});
+
 // ── deleteWorkspace cascade ───────────────────────────────────────────────────
 test("deleteWorkspace: cascade leaves zero orphaned child rows", async () => {
   const res = await deleteWorkspace(workspaceId);

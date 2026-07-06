@@ -6,9 +6,16 @@ import type { CreateConceptLinkInput } from "@/lib/validators/concept-link.schem
 
 export type ConceptLink = typeof conceptLinks.$inferSelect;
 
+// The form schema enum-validates conceptType (audit #30); the analyzer calls
+// this service directly with its own free-text categories, so the service
+// input deliberately widens conceptType back to string.
+type ConceptLinkData = Omit<CreateConceptLinkInput, "conceptType"> & {
+  conceptType?: string;
+};
+
 export async function createConceptLink(
   workspaceId: string,
-  input: CreateConceptLinkInput
+  input: ConceptLinkData
 ): Promise<ServiceResult<ConceptLink>> {
   try {
     const [link] = await db
