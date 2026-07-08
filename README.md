@@ -119,6 +119,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 | `add_concept_link` | Link a DSA/CS concept to a workspace |
 | `add_daily_log` | Log what you built, understood, and what's still unclear |
 | `get_weak_questions` | Surface questions you've been avoiding or haven't answered |
+| `nirmiq_explain_command` | Explain a shell command in plain English with a risk level |
 
 ### AI-Powered (Pro — requires `ANTHROPIC_API_KEY`)
 
@@ -127,6 +128,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 | `nirmiq_generate_questions` | Paste code → get 5 progressive explain-back questions (beginner to advanced) |
 | `nirmiq_suggest_concepts` | Paste code → get 3–5 underlying DSA/CS concepts with 30-min practice tasks |
 | `nirmiq_debug_assist` | Paste an error → get root cause, top 3 checks, fix, and prevention rule |
+| `nirmiq_analyze_project` | Analyze a local project → auto-populated workspace with questions, concepts, and learning map |
 
 AI tools use your own Anthropic API key (BYOK). Add it to `.env.local`:
 
@@ -147,7 +149,7 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 - **Daily Log** — what did you build today? what's still unclear? what next?
 - **Learning Map** — visual graph of concepts across all workspaces.
 - **Markdown Export** — export any workspace as a clean Markdown file.
-- **MCP Server** — 10 tools your AI assistant can call while you work.
+- **MCP Server** — 12 tools your AI assistant can call while you work.
 
 ---
 
@@ -165,7 +167,7 @@ See [SECURITY.md](SECURITY.md) for the full threat model.
 
 ## Stack
 
-Next.js 16 · TypeScript · Tailwind CSS 4 · shadcn/ui · SQLite · Drizzle ORM · Zod · Zustand · MCP SDK · Anthropic SDK
+Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 (hand-rolled components) · SQLite · Drizzle ORM · Zod · MCP SDK · Anthropic SDK
 
 ---
 
@@ -188,7 +190,11 @@ This is an MVP. Issues and PRs welcome. See [docs/TRD.md](docs/TRD.md) for archi
 
 ## License
 
-MIT — use it, fork it, sell your own builds. Attribution appreciated.
+**PolyForm Noncommercial 1.0.0** — free for personal, educational, and research use. Commercial use requires permission from the author. See [LICENSE.md](LICENSE.md).
+
+Required Notice: Copyright © 2026 Siddharth Prashoo (https://github.com/SheeshDarth/NirmiqLearnOS)
+
+If NirmiqLearn OS helps you, please ⭐ star the repo and credit the project when you share or build on it.
 
 ---
 
