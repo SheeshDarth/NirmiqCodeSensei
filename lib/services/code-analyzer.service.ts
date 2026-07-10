@@ -60,6 +60,29 @@ export interface CodeChunk {
   layer: string;
 }
 
+export interface FunctionMetric {
+  name: string;
+  line: number;
+  /** Source lines from declaration to closing brace. */
+  length: number;
+  /** Approximate cyclomatic complexity (1 + decision points). */
+  complexity: number;
+}
+
+/** One scanned source file — reused by the senior-review lenses so the
+ *  review pass never re-walks the tree or re-parses ASTs. */
+export interface FileRecord {
+  rel: string;
+  layer: string;
+  loc: number;
+  bytes: number;
+  content: string;
+  isTsJs: boolean;
+  isClientComponent: boolean;
+  /** Present only for TS/JS files that got an AST pass. */
+  functionMetrics?: FunctionMetric[];
+}
+
 export interface CodeAnalysis {
   findings: CodeFinding[];
   chunks: CodeChunk[];
@@ -67,6 +90,10 @@ export interface CodeAnalysis {
   fileCount: number;
   /** True when the project exceeded MAX_FILES and some files were not scanned. */
   truncated: boolean;
+  /** Every scanned file with content + per-file stats (bounded by MAX_FILES/MAX_FILE_BYTES). */
+  corpus: FileRecord[];
+  /** Raw resolved import edges [from, to] across ALL scanned files. */
+  importEdges: Array<[string, string]>;
 }
 
 // ── File walking ─────────────────────────────────────────────────────────────
@@ -358,6 +385,96 @@ function walkAst(
       walkAst(val, cb, next);
     }
   }
+}
+
+// ── Function metrics (length + approximate cyclomatic complexity) ────────────
+// Counts decision points inside ONE function body, stopping at nested function
+// boundaries so each function is scored independently.
+function complexityOf(fnBody: unknown): number {
+  let count = 1;
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object" || !("type" in node)) return;
+    const n = node as TSESTree.Node;
+    if (
+      n.type === "FunctionDeclaration" ||
+      n.type === "FunctionExpression" ||
+      n.type === "ArrowFunctionExpression"
+    ) return; // nested functions are scored separately
+    switch (n.type) {
+      case "IfStatement":
+      case "ForStatement":
+      case "ForInStatement":
+      case "ForOfStatement":
+      case "WhileStatement":
+      case "DoWhileStatement":
+      case "ConditionalExpression":
+      case "CatchClause":
+        count++;
+        break;
+      case "SwitchCase":
+        if ((n as TSESTree.SwitchCase).test) count++;
+        break;
+      case "LogicalExpression": {
+        const op = (n as TSESTree.LogicalExpression).operator;
+        if (op === "&&" || op === "||" || op === "??") count++;
+        break;
+      }
+      default:
+        break;
+    }
+    for (const val of Object.values(n as unknown as Record<string, unknown>)) {
+      if (Array.isArray(val)) {
+        for (const item of val) visit(item);
+      } else {
+        visit(val);
+      }
+    }
+  };
+  visit(fnBody);
+  return count;
+}
+
+// Named functions only — anonymous callbacks would drown the signal.
+function computeFunctionMetrics(ast: TSESTree.Program): FunctionMetric[] {
+  const metrics: FunctionMetric[] = [];
+  walkAst(ast, (node, ancestors) => {
+    let name: string | null = null;
+    let fn:
+      | TSESTree.FunctionDeclaration
+      | TSESTree.FunctionExpression
+      | TSESTree.ArrowFunctionExpression
+      | null = null;
+    if (node.type === "FunctionDeclaration") {
+      fn = node as TSESTree.FunctionDeclaration;
+      name = (fn as TSESTree.FunctionDeclaration).id?.name ?? null;
+    } else if (
+      node.type === "FunctionExpression" ||
+      node.type === "ArrowFunctionExpression"
+    ) {
+      fn = node as TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
+      const parent = ancestors[ancestors.length - 1];
+      if (parent?.type === "VariableDeclarator" && parent.id.type === "Identifier") {
+        name = (parent.id as TSESTree.Identifier).name;
+      } else if (
+        parent?.type === "MethodDefinition" &&
+        parent.key.type === "Identifier"
+      ) {
+        name = (parent.key as TSESTree.Identifier).name;
+      } else if (parent?.type === "Property" && parent.key.type === "Identifier") {
+        name = (parent.key as TSESTree.Identifier).name;
+      }
+    }
+    if (!fn || !name) return;
+    const start = fn.loc?.start.line ?? 1;
+    const end = fn.loc?.end.line ?? start;
+    metrics.push({
+      name,
+      line: start,
+      length: end - start + 1,
+      complexity: complexityOf(fn.body),
+    });
+  });
+  return metrics;
 }
 
 interface AstHit { line: number; snippet: string }
@@ -834,6 +951,7 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
   const importEdges: Array<[string, string]> = [];
   const allFindings: CodeFinding[] = [];
   const allChunks: CodeChunk[] = [];
+  const corpus: FileRecord[] = [];
   const seenSignalFile = new Set<string>(); // one finding per (signal, file) pair
   const layerByFile = new Map<string, string>();
   let astFileCount = 0;
@@ -855,15 +973,30 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
       }
     }
 
-    // DSA findings: AST for TS/JS (up to cap), regex for everything else
+    // DSA findings: AST for TS/JS (up to cap), regex for everything else.
+    // The AST is consumed here (findings + function metrics) and discarded.
+    const isTsJs = TS_JS_EXT.test(rel);
+    let ast: TSESTree.Program | null = null;
     let findings: CodeFinding[];
-    if (TS_JS_EXT.test(rel) && astFileCount < MAX_AST_FILES) {
-      const ast = parseAst(content, rel);
+    if (isTsJs && astFileCount < MAX_AST_FILES) {
+      ast = parseAst(content, rel);
       findings = ast ? scanFindingsAst(rel, content, ast) : scanFindings(rel, content);
       if (ast) astFileCount++;
     } else {
       findings = scanFindings(rel, content);
     }
+
+    // Corpus record for the senior-review lenses (single shared walk/parse)
+    corpus.push({
+      rel,
+      layer: layerByFile.get(rel)!,
+      loc: content.split("\n").length,
+      bytes: Buffer.byteLength(content),
+      content,
+      isTsJs,
+      isClientComponent: /^\s*(['"])use client\1/.test(content.slice(0, 200)),
+      functionMetrics: ast ? computeFunctionMetrics(ast) : undefined,
+    });
 
     // BM25 search chunk: path tokens + layer + detected signal names
     const layer = layerByFile.get(rel)!;
@@ -965,5 +1098,7 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
     },
     fileCount: files.length,
     truncated: walkState.truncated,
+    corpus,
+    importEdges,
   };
 }
