@@ -38,7 +38,7 @@ export default function CreateMapForm({
           name="title"
           type="text"
           required
-          placeholder="e.g. NirmiqLearn OS Architecture Map"
+          placeholder="e.g. CodeSensei Architecture Map"
           className="w-full bg-zinc-900 border border-zinc-700 focus:border-cyan-500 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
         />
       </div>

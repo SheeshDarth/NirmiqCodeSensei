@@ -6,7 +6,7 @@ const SECTIONS = [
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
     title: "All data is stored locally",
-    body: "NirmiqLearn OS stores everything in a single SQLite database file at data/nirmiqlearn.db inside the project directory. No cloud database. No remote sync. Your data never leaves your machine.",
+    body: "CodeSensei stores everything in a single SQLite database file at data/nirmiqlearn.db inside the project directory. No cloud database. No remote sync. Your data never leaves your machine.",
   },
   {
     icon: Wifi,
@@ -34,7 +34,7 @@ const SECTIONS = [
     color: "text-violet-400",
     bg: "bg-violet-500/10",
     title: "MCP server data access",
-    body: "When you connect NirmiqLearn via MCP to an AI coding tool (Claude Code, Cursor, Windsurf), the AI assistant can read and write to your NirmiqLearn data (workspaces, questions, debug logs, concept links, daily logs). This happens locally — the MCP server runs as a local process with stdio transport. No data is sent to any AI provider beyond what you explicitly ask the AI assistant about.",
+    body: "When you connect CodeSensei via MCP to an AI coding tool (Claude Code, Cursor, Windsurf), the AI assistant can read and write to your CodeSensei data (workspaces, questions, debug logs, concept links, daily logs). This happens locally — the MCP server runs as a local process with stdio transport. No data is sent to any AI provider beyond what you explicitly ask the AI assistant about.",
   },
   {
     icon: Shield,
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
           </h1>
         </div>
         <p className="text-sm text-zinc-500">
-          NirmiqLearn OS is a local-first tool. This is what that means in practice.
+          CodeSensei is a local-first tool. This is what that means in practice.
         </p>
         <p className="text-xs text-zinc-700 mt-1">
           Last updated: June 2026 · Version 0.1.0
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
           Open Source
         </h2>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          NirmiqLearn OS is open source. You can read every line of code that
+          CodeSensei is open source. You can read every line of code that
           handles your data at{" "}
           <span className="text-cyan-400 font-mono text-xs">
             github.com/SheeshDarth/NirmiqLearnOS

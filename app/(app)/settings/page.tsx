@@ -61,7 +61,7 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium text-zinc-100">Theme</p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Nirmiq Cognitive Graph — dark mode
+              CodeSensei Cognitive Graph — dark mode
             </p>
           </div>
           <Settings size={14} className="text-zinc-600" />
@@ -80,7 +80,7 @@ export default function SettingsPage() {
           </span>
         </div>
         <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
-          Connect NirmiqLearn to Claude Code, Cursor, or Windsurf so your AI
+          Connect CodeSensei to Claude Code, Cursor, or Windsurf so your AI
           assistant can automatically log debug sessions, add explain-back
           questions, and link DSA concepts as you build.
         </p>
@@ -156,7 +156,7 @@ export default function SettingsPage() {
           Three AI-powered MCP tools that call the Anthropic API using{" "}
           <em>your own key</em>. Your code never leaves your machine — it is
           sent directly from the MCP server to Anthropic, not through any
-          NirmiqLearn server.
+          CodeSensei server.
         </p>
 
         <div className="space-y-3 mb-4">
@@ -255,7 +255,7 @@ export default function SettingsPage() {
       {/* Version */}
       <div className="text-center">
         <p className="text-xs text-zinc-700 font-mono">
-          NirmiqLearn OS v0.1.0 ·{" "}
+          CodeSensei v0.1.0 ·{" "}
           <a
             href="https://github.com/SheeshDarth/NirmiqLearnOS"
             className="hover:text-zinc-500 transition-colors"

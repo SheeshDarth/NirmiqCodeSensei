@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NirmiqLearn OS",
+  title: "CodeSensei",
   description: "Build with AI, but learn like a real engineer.",
 };
 
