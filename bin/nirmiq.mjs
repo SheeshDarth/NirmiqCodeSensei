@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * nirmiq — NirmiqLearn OS CLI
+ * codesensei — CodeSensei CLI (aliases: nirmiqlearn, nirmiq)
  *
  * Usage:
- *   npx nirmiqlearn              # start the app (dev mode)
- *   npx nirmiqlearn start        # start in production mode
- *   npx nirmiqlearn mcp          # start the MCP server
- *   npx nirmiqlearn open         # open the dashboard in the browser
+ *   npx codesensei              # start the app (dev mode)
+ *   npx codesensei start        # start in production mode
+ *   npx codesensei mcp          # start the MCP server
+ *   npx codesensei open         # open the dashboard in the browser
  *
- * The CLI must be run from the NirmiqLearn OS repo root.
+ * The CLI must be run from the CodeSensei repo root.
  * All data is stored locally — nothing is sent to any server.
  */
 
@@ -36,7 +36,7 @@ const C = {
 function banner() {
   console.log("");
   console.log(C.cyan("  ╔══════════════════════════════════════╗"));
-  console.log(C.cyan("  ║") + C.bold("  NirmiqLearn OS") + C.dim(`  v${VERSION}`) + C.cyan("               ║"));
+  console.log(C.cyan("  ║") + C.bold("  CodeSensei") + C.dim(`  v${VERSION}`) + C.cyan("                   ║"));
   console.log(C.cyan("  ║") + C.dim("  Build with AI, learn like a real engineer") + C.cyan("  ║"));
   console.log(C.cyan("  ╚══════════════════════════════════════╝"));
   console.log("");
@@ -78,7 +78,7 @@ function ensureGitignore(projectDir) {
     const missing = entries.filter((e) => !contents.includes(e));
     if (missing.length > 0) {
       appendFileSync(gi, "\n" + missing.join("\n") + "\n");
-      console.log(C.green("  ✓ Added NirmiqLearn entries to .gitignore"));
+      console.log(C.green("  ✓ Added CodeSensei entries to .gitignore"));
     }
   }
 }
@@ -99,7 +99,7 @@ switch (cmd) {
         : ["start", "--hostname", "127.0.0.1"];
 
     console.log(
-      C.cyan(`  Starting NirmiqLearn OS`) +
+      C.cyan(`  Starting CodeSensei`) +
         C.dim(` (${mode} mode) …`)
     );
     console.log(C.dim(`  Dashboard → ${DASHBOARD_URL}`));
@@ -115,7 +115,7 @@ switch (cmd) {
 
   case "mcp": {
     banner();
-    console.log(C.cyan("  Starting NirmiqLearn MCP server…"));
+    console.log(C.cyan("  Starting CodeSensei MCP server…"));
     console.log(
       C.dim(
         "  Connect this to Claude Code / Cursor / Windsurf via their MCP config."
@@ -140,7 +140,7 @@ switch (cmd) {
   case "version":
   case "--version":
   case "-v": {
-    console.log(`nirmiqlearn v${VERSION}`);
+    console.log(`codesensei v${VERSION}`);
     break;
   }
 
@@ -150,10 +150,11 @@ switch (cmd) {
   default: {
     banner();
     console.log(C.bold("  Usage:"));
-    console.log(`    ${C.cyan("npx nirmiqlearn")}          Start in dev mode + open dashboard`);
-    console.log(`    ${C.cyan("npx nirmiqlearn start")}    Start in production mode`);
-    console.log(`    ${C.cyan("npx nirmiqlearn mcp")}      Start the MCP server (stdio)`);
-    console.log(`    ${C.cyan("npx nirmiqlearn open")}     Open dashboard in browser`);
+    console.log(`    ${C.cyan("npx codesensei")}           Start in dev mode + open dashboard`);
+    console.log(`    ${C.cyan("npx codesensei start")}     Start in production mode`);
+    console.log(`    ${C.cyan("npx codesensei mcp")}       Start the MCP server (stdio)`);
+    console.log(`    ${C.cyan("npx codesensei open")}      Open dashboard in browser`);
+    console.log(C.dim(`    (aliases: npx nirmiqlearn / npx nirmiq)`));
     console.log("");
     console.log(C.bold("  MCP config (Claude Code / Cursor / Windsurf):"));
     console.log(
