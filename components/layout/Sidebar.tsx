@@ -51,7 +51,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
         {!collapsed && (
           <span className="text-sm font-semibold text-zinc-100 tracking-tight">
-            NirmiqLearn
+            CodeSensei
           </span>
         )}
       </div>

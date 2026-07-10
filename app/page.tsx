@@ -3,7 +3,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#0a0c10] text-white">
       <div className="max-w-2xl text-center px-6">
         <p className="text-xs font-mono tracking-widest text-cyan-500 uppercase mb-4">
-          NirmiqLearn OS
+          CodeSensei
         </p>
         <h1 className="text-4xl font-bold tracking-tight mb-4">
           Build with AI.
