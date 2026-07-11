@@ -30,6 +30,8 @@ const { eq } = await import("drizzle-orm");
 const { resolveProjectPath, analyzeProject, reanalyzeProject, IMPORTED_PROJECTS_DIR } =
   await import("@/lib/services/project-analyzer.service");
 const { analyzeCode } = await import("@/lib/services/code-analyzer.service");
+const { computeSeniorReview } = await import("@/lib/services/senior-review.service");
+const { detectStack } = await import("@/lib/services/local-analyzer.service");
 const { deleteWorkspace } = await import("@/lib/services/workspace.service");
 const { createDebugLog } = await import("@/lib/services/debug-log.service");
 
@@ -43,7 +45,21 @@ before(() => {
   mkdirSync(path.join(projectDir, "src"), { recursive: true });
   writeFileSync(
     path.join(projectDir, "package.json"),
-    JSON.stringify({ name: "fixture-app", dependencies: { next: "16.0.0", react: "19.0.0" } }, null, 2)
+    JSON.stringify(
+      {
+        name: "fixture-app",
+        license: "MIT",
+        scripts: { dev: "next dev", build: "next build", test: "node --test" },
+        dependencies: {
+          next: "16.0.0",
+          react: "19.0.0",
+          dayjs: "1.11.0",
+          moment: "2.30.0",
+        },
+      },
+      null,
+      2
+    )
   );
   writeFileSync(
     path.join(projectDir, "README.md"),
@@ -64,6 +80,32 @@ before(() => {
   writeFileSync(
     path.join(projectDir, "src", "util.ts"),
     "export function helper(): number {\n  return new Map([[1, 2]]).size;\n}\n"
+  );
+  // Senior-review fixtures: a file with (fake, synthetic) security smells,
+  // a client component with an alt-less <img>, and one test file.
+  writeFileSync(
+    path.join(projectDir, "src", "insecure.ts"),
+    [
+      'const apiKey = "sk-live-abcdef1234567890";',
+      'export function risky(userId: string) {',
+      '  const q = "SELECT * FROM users WHERE id = " + userId;',
+      '  eval("2 + 2");',
+      "  return { apiKey, q };",
+      "}",
+    ].join("\n")
+  );
+  writeFileSync(
+    path.join(projectDir, "src", "Avatar.tsx"),
+    [
+      '"use client";',
+      "export function Avatar() {",
+      '  return <img src="/a.png" />;',
+      "}",
+    ].join("\n")
+  );
+  writeFileSync(
+    path.join(projectDir, "src", "util.test.ts"),
+    'import { helper } from "./util";\nif (helper() !== 1) throw new Error("bad");\n'
   );
 });
 
@@ -104,8 +146,59 @@ test("analyzeCode: detects real signals, builds graph, not truncated", () => {
   assert.ok(code.chunks.length >= 2, "emits a search chunk per file");
 });
 
+// ── computeSeniorReview (direct, no DB) ──────────────────────────────────────
+test("computeSeniorReview: security lens flags the fake key with masked snippet", () => {
+  const code = analyzeCode(projectDir, "fixture-app");
+  const res = computeSeniorReview({
+    projectPath: projectDir,
+    projectTitle: "fixture-app",
+    corpus: code.corpus,
+    importEdges: code.importEdges,
+    graph: code.graph,
+    stack: detectStack(projectDir, "fixture-app"),
+  });
+  assert.ok(res.ok, res.ok ? "" : res.error);
+  if (!res.ok) return;
+  const sec = res.data.security;
+  const token = sec.findings.find((f) => f.id === "sec-known-token");
+  assert.ok(token, "fake sk-live token flagged");
+  assert.equal(token?.file, "src/insecure.ts");
+  assert.ok((token?.line ?? 0) > 0, "finding carries a line number");
+  assert.ok(
+    !(token?.snippet ?? "").includes("sk-live-abcdef1234567890"),
+    "stored snippet never contains the full secret"
+  );
+  assert.ok(sec.findings.some((f) => f.id === "sec-eval"), "eval() flagged");
+  assert.ok(sec.findings.some((f) => f.id === "sec-sql-concat"), "SQL concat flagged");
+});
+
+test("computeSeniorReview: testing/deps/feasibility/frontend lens stats", () => {
+  const code = analyzeCode(projectDir, "fixture-app");
+  const res = computeSeniorReview({
+    projectPath: projectDir,
+    projectTitle: "fixture-app",
+    corpus: code.corpus,
+    importEdges: code.importEdges,
+    graph: code.graph,
+    stack: detectStack(projectDir, "fixture-app"),
+  });
+  assert.ok(res.ok, res.ok ? "" : res.error);
+  if (!res.ok) return;
+  const r = res.data;
+  assert.ok(r.testing.testFileCount >= 1, "util.test.ts counted as a test file");
+  assert.ok(
+    r.dependencies.duplicatePurpose.some((d) => d.purpose === "dates"),
+    "dayjs + moment flagged as duplicate purpose"
+  );
+  assert.equal(r.feasibility.runnable, true, "dev/start scripts make it runnable");
+  assert.equal(r.frontend.present, true, "React fixture has a frontend");
+  assert.ok(r.frontend.imgWithoutAlt.length >= 1, "alt-less <img> detected");
+  assert.match(r.overall.grade, /^[A-F]$/);
+});
+
 // ── analyzeProject end-to-end (local heuristic, temp DB) ─────────────────────
 let workspaceId: string;
+let seniorGeneratedAt = 0;
 
 test("analyzeProject: local-heuristic import populates the workspace", async () => {
   const res = await analyzeProject({ projectPath: projectDir });
@@ -121,6 +214,18 @@ test("analyzeProject: local-heuristic import populates the workspace", async () 
   const maps = await db.select().from(schema.learningMaps)
     .where(eq(schema.learningMaps.workspaceId, workspaceId));
   assert.equal(maps.length, 1, "learning map auto-created");
+});
+
+test("analyzeProject: persists seniorReviewJson on the learning map", async () => {
+  const [map] = await db.select().from(schema.learningMaps)
+    .where(eq(schema.learningMaps.workspaceId, workspaceId));
+  assert.ok(map.seniorReviewJson, "senior review blob stored");
+  const review = JSON.parse(map.seniorReviewJson!);
+  assert.equal(review.version, 1);
+  assert.match(review.overall.grade, /^[A-F]$/);
+  assert.ok(review.security.findings.length > 0, "fixture smells surfaced");
+  seniorGeneratedAt = review.generatedAt;
+  assert.ok(seniorGeneratedAt > 0);
 });
 
 test("analyzeProject: H4 blocks re-importing the same path", async () => {
@@ -152,6 +257,18 @@ test("reanalyzeProject: replaces analysis artifacts, keeps user data", async () 
   const maps = await db.select().from(schema.learningMaps)
     .where(eq(schema.learningMaps.workspaceId, workspaceId));
   assert.equal(maps.length, 1, "exactly one learning map after refresh");
+});
+
+test("reanalyzeProject: regenerates the senior review", async () => {
+  const [map] = await db.select().from(schema.learningMaps)
+    .where(eq(schema.learningMaps.workspaceId, workspaceId));
+  assert.ok(map.seniorReviewJson, "refresh writes a new senior review");
+  const review = JSON.parse(map.seniorReviewJson!);
+  assert.equal(review.version, 1);
+  assert.ok(
+    review.generatedAt > seniorGeneratedAt,
+    `regenerated (was ${seniorGeneratedAt}, now ${review.generatedAt})`
+  );
 });
 
 // ── blended progress formula (REVIEW-008, #26) ───────────────────────────────
