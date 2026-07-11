@@ -228,6 +228,43 @@ test("analyzeProject: persists seniorReviewJson on the learning map", async () =
   assert.ok(seniorGeneratedAt > 0);
 });
 
+test("analyzeProject: graph file nodes carry senior-review flags", async () => {
+  const [map] = await db.select().from(schema.learningMaps)
+    .where(eq(schema.learningMaps.workspaceId, workspaceId));
+  assert.ok(map.graphJson, "graph stored");
+  const graph = JSON.parse(map.graphJson!);
+  const flagged = graph.nodes.find(
+    (n: { id: string }) => n.id === "file:src/insecure.ts"
+  );
+  assert.ok(flagged, "insecure.ts appears in the graph");
+  assert.ok(flagged.flags?.security, "insecure.ts badged with a security flag");
+});
+
+test("graph-utils: neighborhood depths and search matching", async () => {
+  const { buildAdjacency, neighborhood, matchNodes, endpointId } = await import(
+    "@/components/learning-map/graph-utils"
+  );
+  const links = [
+    { source: "a", target: "b" },
+    { source: "b", target: "c" },
+    { source: "c", target: "d" },
+    { source: { id: "d" }, target: "e" }, // object endpoint (post-force-graph shape)
+  ];
+  const adj = buildAdjacency(links);
+  assert.deepEqual([...neighborhood(adj, "a", 1)].sort(), ["a", "b"]);
+  assert.deepEqual([...neighborhood(adj, "a", 2)].sort(), ["a", "b", "c"]);
+  assert.equal(neighborhood(adj, "e", 2).has("c"), true, "object endpoints resolved");
+  assert.equal(endpointId({ id: "x" }), "x");
+
+  const nodes = [
+    { id: "file:src/index.ts", label: "src/index.ts", type: "file", val: 4 },
+    { id: "layer:Data Layer", label: "Data Layer", type: "layer", val: 10 },
+  ] as import("@/lib/services/knowledge-graph.service").GraphNode[];
+  assert.equal(matchNodes(nodes, "INDEX").length, 1, "case-insensitive match");
+  assert.equal(matchNodes(nodes, "data").length, 1);
+  assert.equal(matchNodes(nodes, "").length, 0, "empty query matches nothing");
+});
+
 test("analyzeProject: H4 blocks re-importing the same path", async () => {
   const res = await analyzeProject({ projectPath: projectDir });
   assert.equal(res.ok, false);
