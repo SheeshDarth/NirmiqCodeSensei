@@ -506,7 +506,7 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 **Decision:**
 > Approve the three-phase CodeSensei program: visible-identity rename with compat allowlist; eight local senior-review lenses reusing the analyzeCode corpus with optional findings-only AI narrative; Obsidian-grade graph interactions with Phase-2 badges. Verification gate (lint → typecheck → build → test) after every phase.
 
-**Status:** 🔄 In progress on `feature/codesensei`.
+**Status:** ✅ Implemented on `feature/codesensei` (13 commits). Suite 16/16; lint + typecheck + build clean. Lens pass measured at 25 ms on this repo's 118 files (2 s budget). Dogfood grade: B (76/100).
 
 ---
 
@@ -523,4 +523,4 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-007 | Import-pipeline tests (#32) — node:test via tsx, zero new deps; no Vitest/Jest/CI | ✅ Implemented — 8/8 passing | Pre-1.0 |
 | REVIEW-008 | Whole-project review — polish sprint: GitHub-pull on refresh, blended progress formula (#26), conceptType form enum (#30); defer cohesion/search/graph | ✅ Implemented — 10/10 tests | Pre-1.0 |
 | REVIEW-009 | Landing strategy — preserve 15 commits (rebase-and-merge, no squash); skip paid AI smoke test; F2/F4/F5 cleanup as 3 free commits | ✅ Implemented — cleanup done | Pre-1.0 |
-| REVIEW-010 | CodeSensei program — visible-identity rename, 8-lens local senior-review engine (findings-only optional AI), Obsidian-grade graph | 🔄 In progress | v0.2 |
+| REVIEW-010 | CodeSensei program — visible-identity rename, 8-lens local senior-review engine (findings-only optional AI), Obsidian-grade graph | ✅ Implemented — 16/16 tests | v0.2 |
