@@ -18,7 +18,7 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium text-zinc-100">Storage Location</p>
             <p className="text-xs text-zinc-500 mt-0.5 font-mono">
-              data/nirmiqlearn.db
+              data/nirmiqcodesensei.db
             </p>
           </div>
           <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded">
@@ -45,7 +45,7 @@ export default function SettingsPage() {
             <p className="text-sm font-medium text-zinc-100">AI Pro Tools</p>
             <p className="text-xs text-zinc-500 mt-0.5">
               Needs{" "}
-              <code className="font-mono text-amber-400">NIRMIQ_PRO_KEY</code>
+              <code className="font-mono text-amber-400">NCS_PRO_KEY</code>
               {" "}+{" "}
               <code className="font-mono text-amber-400">ANTHROPIC_API_KEY</code>
               {" "}in .env.local
@@ -61,7 +61,7 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium text-zinc-100">Theme</p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              CodeSensei Cognitive Graph — dark mode
+              NirmiqCodeSensei Cognitive Graph — dark mode
             </p>
           </div>
           <Settings size={14} className="text-zinc-600" />
@@ -80,7 +80,7 @@ export default function SettingsPage() {
           </span>
         </div>
         <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
-          Connect CodeSensei to Claude Code, Cursor, or Windsurf so your AI
+          Connect NirmiqCodeSensei to Claude Code, Cursor, or Windsurf so your AI
           assistant can automatically log debug sessions, add explain-back
           questions, and link DSA concepts as you build.
         </p>
@@ -104,10 +104,10 @@ export default function SettingsPage() {
             <pre className="bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-3 py-2 rounded overflow-x-auto">
               {`{
   "mcpServers": {
-    "nirmiqlearn": {
+    "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/path/to/NirmiqLearnOS"
+      "cwd": "/path/to/NirmiqCodeSenseiOS"
     }
   }
 }`}
@@ -120,10 +120,10 @@ export default function SettingsPage() {
             </p>
             <pre className="bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-3 py-2 rounded overflow-x-auto">
               {`{
-  "nirmiqlearn": {
+  "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/path/to/NirmiqLearnOS"
+    "cwd": "/path/to/NirmiqCodeSenseiOS"
   }
 }`}
             </pre>
@@ -135,8 +135,8 @@ export default function SettingsPage() {
             get_weak_questions
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            AI tools (3, needs ANTHROPIC_API_KEY): nirmiq_generate_questions ·
-            nirmiq_suggest_concepts · nirmiq_debug_assist
+            AI tools (3, needs ANTHROPIC_API_KEY): ncs_generate_questions ·
+            ncs_suggest_concepts · ncs_debug_assist
           </p>
         </div>
       </div>
@@ -156,13 +156,13 @@ export default function SettingsPage() {
           Three AI-powered MCP tools that call the Anthropic API using{" "}
           <em>your own key</em>. Your code never leaves your machine — it is
           sent directly from the MCP server to Anthropic, not through any
-          CodeSensei server.
+          NirmiqCodeSensei server.
         </p>
 
         <div className="space-y-3 mb-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
             <p className="text-xs font-mono text-amber-300">
-              nirmiq_generate_questions
+              ncs_generate_questions
             </p>
             <p className="text-xs text-zinc-500">
               Paste a code snippet → get 5 progressive explain-back questions
@@ -171,7 +171,7 @@ export default function SettingsPage() {
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
             <p className="text-xs font-mono text-amber-300">
-              nirmiq_suggest_concepts
+              ncs_suggest_concepts
             </p>
             <p className="text-xs text-zinc-500">
               Paste code → get 3–5 underlying DSA/CS concepts with 30-min
@@ -180,7 +180,7 @@ export default function SettingsPage() {
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded p-3 space-y-1">
             <p className="text-xs font-mono text-amber-300">
-              nirmiq_debug_assist
+              ncs_debug_assist
             </p>
             <p className="text-xs text-zinc-500">
               Paste an error message → get root cause, top 3 checks, suggested
@@ -195,7 +195,7 @@ export default function SettingsPage() {
             <span className="font-mono text-zinc-500">.env.local</span>
           </p>
           <pre className="bg-zinc-900 border border-zinc-800 text-xs text-cyan-300 font-mono px-3 py-2 rounded overflow-x-auto">
-            {`# 1. Your Gumroad Pro license key\nNIRMIQ_PRO_KEY=XXXX-XXXX-XXXX-XXXX\n\n# 2. Your Anthropic API key (BYOK)\nANTHROPIC_API_KEY=sk-ant-api03-...`}
+            {`# 1. Your Gumroad Pro license key\nNCS_PRO_KEY=XXXX-XXXX-XXXX-XXXX\n\n# 2. Your Anthropic API key (BYOK)\nANTHROPIC_API_KEY=sk-ant-api03-...`}
           </pre>
           <p className="text-xs text-zinc-700 mt-2">
             License verified against Gumroad once, then cached locally for 7
@@ -255,14 +255,14 @@ export default function SettingsPage() {
       {/* Version */}
       <div className="text-center">
         <p className="text-xs text-zinc-700 font-mono">
-          CodeSensei v0.1.0 ·{" "}
+          NirmiqCodeSensei v0.1.0 ·{" "}
           <a
-            href="https://github.com/SheeshDarth/NirmiqLearnOS"
+            href="https://github.com/SheeshDarth/NirmiqCodeSenseiOS"
             className="hover:text-zinc-500 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
-            github.com/SheeshDarth/NirmiqLearnOS
+            github.com/SheeshDarth/NirmiqCodeSenseiOS
           </a>
         </p>
       </div>

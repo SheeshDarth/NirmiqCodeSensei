@@ -1,5 +1,5 @@
 {
-  "name": "codesensei",
+  "name": "nirmiqcodesensei",
   "version": "0.1.0",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
@@ -8,7 +8,7 @@
   },
   "bin": {
     "codesensei": "./bin/nirmiq.mjs",
-    "nirmiqlearn": "./bin/nirmiq.mjs",
+    "nirmiqcodesensei": "./bin/nirmiq.mjs",
     "nirmiq": "./bin/nirmiq.mjs"
   },
   "scripts": {

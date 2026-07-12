@@ -1,15 +1,15 @@
-# Git Workflow — NirmiqLearn OS
+# Git Workflow — NirmiqCodeSensei
 
 ## 1. Repository
 
 Target:
-https://github.com/SheeshDarth/NirmiqLearnOS
+https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 
 ## 2. Initial Setup
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqLearnOS.git
-cd NirmiqLearnOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
+cd NirmiqCodeSenseiOS
 ```
 
 If repo is empty:

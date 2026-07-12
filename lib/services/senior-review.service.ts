@@ -1,5 +1,5 @@
 /**
- * CodeSensei — Senior Review Engine
+ * NirmiqCodeSensei — Senior Review Engine
  *
  * Computes a multi-discipline, senior-engineer-grade review of an imported
  * project from LOCALLY collected data only (the analyzeCode corpus + import

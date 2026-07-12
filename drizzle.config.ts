@@ -5,6 +5,6 @@ export default {
   out: "./lib/db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: "./data/nirmiqlearn.db",
+    url: "./data/nirmiqcodesensei.db",
   },
 } satisfies Config;

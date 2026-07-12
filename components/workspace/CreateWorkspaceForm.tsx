@@ -67,7 +67,7 @@ export default function CreateWorkspaceForm() {
           name="title"
           type="text"
           required
-          placeholder="e.g. CodeSensei, Binary Search Trees, Viva Prep…"
+          placeholder="e.g. NirmiqCodeSensei, Binary Search Trees, Viva Prep…"
           className="w-full bg-zinc-900 border border-zinc-700 focus:border-cyan-500 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
         />
       </div>

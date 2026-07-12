@@ -1,10 +1,10 @@
-# Repository Setup — NirmiqLearn OS
+# Repository Setup — NirmiqCodeSensei
 
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqLearnOS.git
-cd NirmiqLearnOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
+cd NirmiqCodeSenseiOS
 ```
 
 ## 2. Initialize App if Empty
@@ -55,6 +55,6 @@ Add to package.json:
 
 ```bash
 git add .
-git commit -m "chore: initialize NirmiqLearn OS project"
+git commit -m "chore: initialize NirmiqCodeSensei project"
 git push origin main
 ```

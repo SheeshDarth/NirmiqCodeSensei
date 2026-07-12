@@ -1,4 +1,4 @@
-﻿# NirmiqLearn OS — Clean Room Architecture Standard
+﻿# NirmiqCodeSensei — Clean Room Architecture Standard
 
 **No code enters this directory unless it passes every rule in this document.**
 All rules are grounded in the actual codebase (`CODEBASE_MAP.md`, `CLAUDE.md`).

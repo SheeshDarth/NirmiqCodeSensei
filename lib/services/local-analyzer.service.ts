@@ -1,5 +1,5 @@
 /**
- * NirmiqLearn OS — Local Project Analyzer
+ * NirmiqCodeSensei — Local Project Analyzer
  *
  * Analyzes a project folder without any AI API call.
  * Detects the tech stack from config files, then generates structured

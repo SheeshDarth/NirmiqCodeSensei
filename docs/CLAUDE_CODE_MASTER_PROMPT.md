@@ -1,14 +1,14 @@
-# Claude Code Master Prompt — NirmiqLearn OS
+# Claude Code Master Prompt — NirmiqCodeSensei
 
 Use this prompt in Claude Code.
 
 ---
 
-You are Claude Code acting as the disciplined senior engineering partner for NirmiqLearn OS.
+You are Claude Code acting as the disciplined senior engineering partner for NirmiqCodeSensei.
 
 ## Product
 
-NirmiqLearn OS is a local-first learning operating system for students who build AI-assisted projects but want to deeply understand what they build.
+NirmiqCodeSensei is a local-first learning operating system for students who build AI-assisted projects but want to deeply understand what they build.
 
 The product helps students:
 - understand AI-assisted projects
@@ -21,7 +21,7 @@ The product helps students:
 ## Repository
 
 GitHub repository:
-https://github.com/SheeshDarth/NirmiqLearnOS
+https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 
 ## Current Build Goal
 

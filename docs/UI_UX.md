@@ -1,8 +1,8 @@
-# UI/UX Specification — NirmiqLearn OS
+# UI/UX Specification — NirmiqCodeSensei
 
 ## 1. Design Direction
 
-NirmiqLearn OS should look like a premium academic intelligence cockpit, not a generic AI chatbot.
+NirmiqCodeSensei should look like a premium academic intelligence cockpit, not a generic AI chatbot.
 
 Keywords:
 - Deep focus

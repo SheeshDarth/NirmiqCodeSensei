@@ -1,8 +1,8 @@
 /**
- * NirmiqLearn OS — AI-Powered MCP Tools (Pro Tier)
+ * NirmiqCodeSensei — AI-Powered MCP Tools (Pro Tier)
  *
  * These tools require:
- *   1. NIRMIQ_PRO_KEY — a valid Gumroad license key (verified once, cached 7 days)
+ *   1. NCS_PRO_KEY — a valid Gumroad license key (verified once, cached 7 days)
  *   2. ANTHROPIC_API_KEY — the user's own Anthropic API key (BYOK)
  *
  * Model: claude-opus-4-8
@@ -27,7 +27,7 @@ import { analyzeProject as analyzeProjectService } from "../lib/services/project
 const NO_ANTHROPIC_KEY_MSG = [
   "🔑 AI tools also need your Anthropic API key.",
   "",
-  "Add to .env.local in your NirmiqLearnOS directory:",
+  "Add to .env.local in your NirmiqCodeSenseiOS directory:",
   "   ANTHROPIC_API_KEY=sk-ant-api03-...",
   "",
   "Get a key at https://console.anthropic.com/",

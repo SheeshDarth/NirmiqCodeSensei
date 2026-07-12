@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "nirmiqlearn": {
+    "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
       "cwd": ".",
-      "description": "CodeSensei — AI-native learning tools for any project"
+      "description": "NirmiqCodeSensei — AI-native learning tools for any project"
     }
   }
 }

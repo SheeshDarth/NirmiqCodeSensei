@@ -1,8 +1,8 @@
-# Context — NirmiqLearn OS
+# Context — NirmiqCodeSensei
 
 ## Why This Product Exists
 
-NirmiqLearn OS is created for students who use AI to build projects but still want to become genuinely skilled.
+NirmiqCodeSensei is created for students who use AI to build projects but still want to become genuinely skilled.
 
 AI coding tools can generate code quickly, but students may lose:
 - Analytical thinking
@@ -31,7 +31,7 @@ NIRMIQ should feel like:
 
 ## Product Personality
 
-NirmiqLearn OS should be:
+NirmiqCodeSensei should be:
 - Serious
 - Clean
 - Premium

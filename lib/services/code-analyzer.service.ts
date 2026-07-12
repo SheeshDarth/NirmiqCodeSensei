@@ -1,5 +1,5 @@
 /**
- * NirmiqLearn OS — Code Analyzer (Phase B v2)
+ * NirmiqCodeSensei — Code Analyzer (Phase B v2)
  *
  * Reads the ACTUAL source files of a project and extracts:
  *   1. Code-grounded DSA findings — data structures & algorithms really present

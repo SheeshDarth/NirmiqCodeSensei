@@ -1,12 +1,12 @@
-# Security Policy — CodeSensei
+# Security Policy — NirmiqCodeSensei
 
 ## Threat Model
 
-CodeSensei (formerly NirmiqLearn OS) is a **local-first, single-user, offline tool**.
+NirmiqCodeSensei (formerly NirmiqCodeSensei) is a **local-first, single-user, offline tool**.
 
 - It binds exclusively to `127.0.0.1` — not accessible from the LAN or internet.
 - It makes zero outbound network calls at runtime.
-- All data lives in a local SQLite file (`data/nirmiqlearn.db`).
+- All data lives in a local SQLite file (`data/nirmiqcodesensei.db`).
 - The MCP server uses stdio transport — it opens no network socket.
 
 The primary threat surface is **local**: a malicious process or browser tab running on the same machine.

@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * NirmiqLearn OS — Hook Installer
+ * NirmiqCodeSensei — Hook Installer
  *
  * Run from inside any project directory to install the vibe coding companion:
  *
- *   node /path/to/NirmiqLearnOS/hooks/install-hooks.mjs
+ *   node /path/to/NirmiqCodeSenseiOS/hooks/install-hooks.mjs
  *
  * Installs two Claude Code hooks into .claude/settings.json (existing settings
  * and hooks are preserved):
  *   - PreToolUse(Bash)  → pre-bash.mjs  : fast safety guard; blocks destructive
  *     commands (no network, no LLM).
  *   - PostToolUse(Bash) → post-bash.mts : logs each non-trivial command + a
- *     plain-English AI explanation + risk level + outcome to the NirmiqLearn
+ *     plain-English AI explanation + risk level + outcome to the NirmiqCodeSensei
  *     session log. Runs under tsx (it calls the TypeScript services directly).
  */
 
@@ -20,14 +20,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const NIRMIQ_ROOT = path.resolve(__dirname, "..");
+const NCS_ROOT = path.resolve(__dirname, "..");
 const toPosix = (p) => p.replace(/\\/g, "/");
 
-const PRE_HOOK = toPosix(path.join(NIRMIQ_ROOT, "hooks", "pre-bash.mjs"));
-const POST_HOOK = toPosix(path.join(NIRMIQ_ROOT, "hooks", "post-bash.mts"));
+const PRE_HOOK = toPosix(path.join(NCS_ROOT, "hooks", "pre-bash.mjs"));
+const POST_HOOK = toPosix(path.join(NCS_ROOT, "hooks", "post-bash.mts"));
 // post-bash.mts imports the TypeScript services, so it must run under tsx,
-// resolved from the NirmiqLearn install (which always has tsx installed).
-const TSX_CLI = toPosix(path.join(NIRMIQ_ROOT, "node_modules", "tsx", "dist", "cli.mjs"));
+// resolved from the NirmiqCodeSensei install (which always has tsx installed).
+const TSX_CLI = toPosix(path.join(NCS_ROOT, "node_modules", "tsx", "dist", "cli.mjs"));
 
 const PRE_CMD = `node "${PRE_HOOK}"`;
 const POST_CMD = `node "${TSX_CLI}" "${POST_HOOK}"`;
@@ -63,7 +63,7 @@ const addedPre = ensureHook(settings.hooks.PreToolUse, "pre-bash.mjs", PRE_CMD);
 const addedPost = ensureHook(settings.hooks.PostToolUse, "post-bash.mts", POST_CMD);
 
 if (!addedPre && !addedPost) {
-  console.log("✅ NirmiqLearn hooks are already installed in this project.");
+  console.log("✅ NirmiqCodeSensei hooks are already installed in this project.");
   process.exit(0);
 }
 
@@ -71,7 +71,7 @@ mkdirSync(CLAUDE_DIR, { recursive: true });
 writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2), "utf-8");
 
 console.log(`
-✅ NirmiqLearn vibe coding companion installed!
+✅ NirmiqCodeSensei vibe coding companion installed!
 
 Project:  ${CWD}
 Settings: ${SETTINGS_PATH}
@@ -79,12 +79,12 @@ Settings: ${SETTINGS_PATH}
 What happens now:
   → PreToolUse  guards against destructive Bash commands (rm -rf /, fork bombs, …)
   → PostToolUse logs every non-trivial command + a plain-English explanation and
-    risk level to your NirmiqLearn session log (capped at 100 commands/hour)
+    risk level to your NirmiqCodeSensei session log (capped at 100 commands/hour)
 
-To uninstall: remove the NirmiqLearn entries from .claude/settings.json
+To uninstall: remove the NirmiqCodeSensei entries from .claude/settings.json
 
-Configure (in ${path.join(NIRMIQ_ROOT, ".env.local")}):
+Configure (in ${path.join(NCS_ROOT, ".env.local")}):
   ANTHROPIC_API_KEY   — required for AI explanations (Pro)
-  NIRMIQ_PRO_KEY      — your Pro license key
-  NIRMIQ_WORKSPACE_ID — optional: attach session logs to a specific workspace
+  NCS_PRO_KEY      — your Pro license key
+  NCS_WORKSPACE_ID — optional: attach session logs to a specific workspace
 `);

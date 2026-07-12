@@ -1,7 +1,7 @@
 /**
- * NirmiqLearn OS — MCP Server
+ * NirmiqCodeSensei — MCP Server
  *
- * Exposes NirmiqLearn as AI-native tools for Claude Code, Cursor,
+ * Exposes NirmiqCodeSensei as AI-native tools for Claude Code, Cursor,
  * Windsurf, and any MCP-compatible IDE.
  *
  * Transport: stdio (standard input/output)
@@ -37,7 +37,7 @@ import { createSessionLog } from "../lib/services/session-log.service";
 // ── Server setup ───────────────────────────────────────────────────────────────
 
 const server = new Server(
-  { name: "nirmiqlearn-os", version: "0.1.0" },
+  { name: "nirmiqcodesensei", version: "0.1.0" },
   {
     capabilities: { tools: {} },
   }
@@ -50,7 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "list_workspaces",
       description:
-        "List all NirmiqLearn workspaces. Use this first to find the workspace_id for subsequent calls.",
+        "List all NirmiqCodeSensei workspaces. Use this first to find the workspace_id for subsequent calls.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -222,7 +222,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
     // ── AI-powered tools (Pro tier) ─────────────────────────────────────────
     {
-      name: "nirmiq_generate_questions",
+      name: "ncs_generate_questions",
       description:
         "AI-POWERED: Analyse a code snippet and generate 5 explain-back questions the student should be able to answer, with expected answer points. Requires ANTHROPIC_API_KEY in environment. Call this whenever you write a significant function, class, or feature so the student gets instant review material. Returns suggestions as text — it does NOT save anything; call add_question to persist the ones you want.",
       inputSchema: {
@@ -241,7 +241,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "nirmiq_suggest_concepts",
+      name: "ncs_suggest_concepts",
       description:
         "AI-POWERED: Analyse a code snippet and identify the underlying DSA/CS concepts it uses (HashMap, Binary Search, Design Pattern, etc.) with concrete practice tasks. Requires ANTHROPIC_API_KEY. Call this when implementing a feature to show the student what fundamentals are at play. Returns suggestions as text — it does NOT save anything; call add_concept_link to persist.",
       inputSchema: {
@@ -260,7 +260,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "nirmiq_debug_assist",
+      name: "ncs_debug_assist",
       description:
         "AI-POWERED: Analyse an error message and code context to identify the likely root cause, top 3 things to check, a suggested fix, and a prevention rule. Requires ANTHROPIC_API_KEY. Call this when the student hits an error. Returns analysis as text — nothing is saved until you call add_debug_log to record the diagnosis.",
       inputSchema: {
@@ -279,9 +279,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "nirmiq_analyze_project",
+      name: "ncs_analyze_project",
       description:
-        "AI-POWERED: Point NirmiqLearn at any project folder and get a complete understanding breakdown — plain English explanation of what it does, tech stack simplified, architecture overview, key files, learning map, 10 explain-back questions, and 5 CS concepts. Automatically creates a workspace populated with all of this. Use this when the user says 'help me understand this project' or 'I vibe coded this and don't know what it does'. Requires NIRMIQ_PRO_KEY + ANTHROPIC_API_KEY.",
+        "AI-POWERED: Point NirmiqCodeSensei at any project folder and get a complete understanding breakdown — plain English explanation of what it does, tech stack simplified, architecture overview, key files, learning map, 10 explain-back questions, and 5 CS concepts. Automatically creates a workspace populated with all of this. Use this when the user says 'help me understand this project' or 'I vibe coded this and don't know what it does'. Requires NCS_PRO_KEY + ANTHROPIC_API_KEY.",
       inputSchema: {
         type: "object",
         properties: {
@@ -291,16 +291,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           workspace_name: {
             type: "string",
-            description: "Optional: name for the NirmiqLearn workspace. Defaults to the folder name.",
+            description: "Optional: name for the NirmiqCodeSensei workspace. Defaults to the folder name.",
           },
         },
         required: ["project_path"],
       },
     },
     {
-      name: "nirmiq_explain_command",
+      name: "ncs_explain_command",
       description:
-        "AI-POWERED: Explain a shell command in plain English before or after it runs. Returns a plain-language explanation of what the command does, why it might be running, what it will change, and a risk level (safe/caution/risky). Use this to log commands to the session log so the user builds understanding of what happened during vibe coding. Requires NIRMIQ_PRO_KEY + ANTHROPIC_API_KEY.",
+        "AI-POWERED: Explain a shell command in plain English before or after it runs. Returns a plain-language explanation of what the command does, why it might be running, what it will change, and a risk level (safe/caution/risky). Use this to log commands to the session log so the user builds understanding of what happened during vibe coding. Requires NCS_PRO_KEY + ANTHROPIC_API_KEY.",
       inputSchema: {
         type: "object",
         properties: {
@@ -503,7 +503,7 @@ async function runTool(name: string, args: unknown) {
       }
 
       // ── AI-powered tools (Pro tier) ────────────────────────────────────────
-      case "nirmiq_generate_questions": {
+      case "ncs_generate_questions": {
         const schema = z.object({
           code_snippet: z.string().min(10),
           context: z.string().optional(),
@@ -513,7 +513,7 @@ async function runTool(name: string, args: unknown) {
         return ok(result);
       }
 
-      case "nirmiq_suggest_concepts": {
+      case "ncs_suggest_concepts": {
         const schema = z.object({
           code_snippet: z.string().min(10),
           feature_description: z.string().optional(),
@@ -523,7 +523,7 @@ async function runTool(name: string, args: unknown) {
         return ok(result);
       }
 
-      case "nirmiq_debug_assist": {
+      case "ncs_debug_assist": {
         const schema = z.object({
           error_message: z.string().min(5),
           code_context: z.string().optional(),
@@ -533,7 +533,7 @@ async function runTool(name: string, args: unknown) {
         return ok(result);
       }
 
-      case "nirmiq_analyze_project": {
+      case "ncs_analyze_project": {
         const schema = z.object({
           project_path: z.string().min(2),
           workspace_name: z.string().optional(),
@@ -543,7 +543,7 @@ async function runTool(name: string, args: unknown) {
         return ok(result);
       }
 
-      case "nirmiq_explain_command": {
+      case "ncs_explain_command": {
         const schema = z.object({
           command: z.string().min(1),
           workspace_id: z.string().optional(),
@@ -620,7 +620,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Log to stderr so stdout stays clean for MCP protocol messages
-  process.stderr.write("NirmiqLearn OS MCP server running (stdio)\n");
+  process.stderr.write("NirmiqCodeSensei MCP server running (stdio)\n");
 }
 
 main().catch((e) => {

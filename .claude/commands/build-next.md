@@ -4,7 +4,7 @@ Use this command when building the next feature.
 
 ## Instruction
 
-You are working on NirmiqLearn OS.
+You are working on NirmiqCodeSensei.
 
 1. Read docs/CONTEXT.md.
 2. Read the one doc most relevant to the task.

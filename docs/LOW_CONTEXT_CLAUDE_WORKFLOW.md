@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build NirmiqLearn OS without wasting Claude's context window.
+Build NirmiqCodeSensei without wasting Claude's context window.
 
 ## Golden Rule
 
@@ -17,7 +17,7 @@ Claude should never need the entire project in context. It should use:
 Paste this at the start of a Claude Code session:
 
 ```text
-You are working on NirmiqLearn OS.
+You are working on NirmiqCodeSensei.
 
 Before coding:
 1. Read docs/CONTEXT.md.

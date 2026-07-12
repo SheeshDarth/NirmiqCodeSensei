@@ -1,8 +1,8 @@
-# Technical Requirements Document — NirmiqLearn OS
+# Technical Requirements Document — NirmiqCodeSensei
 
 ## 1. Architecture Overview
 
-NirmiqLearn OS MVP should be a local-first Next.js application using SQLite for storage.
+NirmiqCodeSensei MVP should be a local-first Next.js application using SQLite for storage.
 
 Recommended MVP architecture:
 
@@ -38,7 +38,7 @@ Next.js App Router
 ## 3. Folder Structure
 
 ```text
-NirmiqLearnOS/
+NirmiqCodeSenseiOS/
   app/
     page.tsx
     dashboard/
@@ -80,7 +80,7 @@ NirmiqLearnOS/
     utils.ts
 
   data/
-    nirmiqlearn.db
+    nirmiqcodesensei.db
 
   docs/
     PRD.md
