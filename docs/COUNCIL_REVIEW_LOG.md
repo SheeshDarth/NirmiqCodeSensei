@@ -510,6 +510,29 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 
 ---
 
+### REVIEW-011 — Road to a Deployed 1.0: single-problem Megasprints + full deep rename to NirmiqCodeSensei
+
+**Date:** 2026-07-12
+**Trigger:** With the deep Senior-Review engine and Obsidian-grade graph built (REVIEW-010), the user set the destination: take the project all the way to **actual deployed, production-grade software** (security, license, architecture, framework, algorithms, and — honestly assessed — load balancing / traffic handling), and rename it to its final identity **NirmiqCodeSensei** (folder + GitHub). Requirement: not one monolithic deploy sprint, but a **series of megasprints, each solving one major problem deeply**.
+
+**Council Synthesis:**
+
+**Recommendation:** Sequence **MS1 → MS7** (MS8 stretch), each a focused single-problem PR with its own council entry and green gate. **MS1 = full deep rename** (display + package + repo, plus the internals we protected before — DB filename with a boot-time `renameSync` migration, env vars `NIRMIQ_*`→`NCS_*` with old-name fallback, MCP server id/key and `nirmiq_*`→`ncs_*` tools) — done now because nothing is distributed yet and every later artifact bakes in the name. **MS2 = security** next (the app ingests users' private source code — trust is the gating adoption risk). Then **MS3 architecture/data-integrity**, **MS4 algorithms/analysis depth**, **MS5 QA**, **MS6 framework/perf**, **MS7 distribution/release** (`npx nirmiqcodesensei` + versioned GitHub Releases = the actual "deploy"). Free + BYOK is the default throughout; Pro stays dormant (decision deferred).
+
+**Risks:**
+- *Deep-rename breakage* (DB/env/MCP) → boot-time DB rename shim + `process.env.NCS_X ?? NIRMIQ_X` fallbacks + a documented MCP config change; land as one PR with a full `git grep -in nirmiqlearn` allowlist check and the test suite (which exercises the DB path) green.
+- *Scope creep per megasprint* → each has one problem + explicit exit criteria; extras defer to their own megasprint.
+- *Over-engineering a local tool* → load balancing / horizontal scaling / traffic handlers are recorded as a deliberate **N/A** (ADR in MS7), not built; effort goes to security, integrity, QA, and distribution — the real 1.0 blockers.
+
+**What NOT to Build:** load balancers, horizontal scaling, multi-tenancy, auth/accounts, a hosted SaaS, or a desktop installer for 1.0 (N/A for local-first or explicitly post-1.0).
+
+**Decision:**
+> Approve the MS1–MS7 megasprint roadmap (`docs/MEGASPRINT_ROADMAP.md`); ship each deeply and independently, gated and council-logged, to a distributable **v1.0.0** as **NirmiqCodeSensei**.
+
+**Status:** 🔄 In progress — MS1 (deep rename) executing on `feature/codesensei`.
+
+---
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
@@ -524,3 +547,4 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-008 | Whole-project review — polish sprint: GitHub-pull on refresh, blended progress formula (#26), conceptType form enum (#30); defer cohesion/search/graph | ✅ Implemented — 10/10 tests | Pre-1.0 |
 | REVIEW-009 | Landing strategy — preserve 15 commits (rebase-and-merge, no squash); skip paid AI smoke test; F2/F4/F5 cleanup as 3 free commits | ✅ Implemented — cleanup done | Pre-1.0 |
 | REVIEW-010 | CodeSensei program — visible-identity rename, 8-lens local senior-review engine (findings-only optional AI), Obsidian-grade graph | ✅ Implemented — 16/16 tests | v0.2 |
+| REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | 🔄 In progress (MS1) | v0.2→1.0 |
