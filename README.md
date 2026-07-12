@@ -1,8 +1,8 @@
-# CodeSensei
+# NirmiqCodeSensei
 
 > **Build with AI, but learn like a real engineer.**
 >
-> _Formerly NirmiqLearn OS._
+> _Formerly NirmiqCodeSensei._
 
 A local-first learning OS that sits inside your IDE and makes sure you actually understand the code you ship — not just that it works.
 
@@ -12,13 +12,13 @@ A local-first learning OS that sits inside your IDE and makes sure you actually 
 
 You use Cursor, Claude Code, or Copilot to build faster. Your code works. But when someone asks *why* you made a design decision, or *what* the time complexity is, or *how* you'd extend it — the answer isn't there. The AI wrote it. You shipped it. But you didn't learn it.
 
-CodeSensei fixes this without slowing you down.
+NirmiqCodeSensei fixes this without slowing you down.
 
 ---
 
 ## How it works
 
-CodeSensei connects to your AI coding assistant (Claude Code, Cursor, Windsurf) via MCP. While you build, your assistant can automatically:
+NirmiqCodeSensei connects to your AI coding assistant (Claude Code, Cursor, Windsurf) via MCP. While you build, your assistant can automatically:
 
 - Log debug sessions with root cause and fix
 - Generate explain-back questions from your code *(Pro)*
@@ -35,8 +35,8 @@ Everything is stored locally in SQLite. Nothing leaves your machine.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqLearnOS.git
-cd NirmiqLearnOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
+cd NirmiqCodeSenseiOS
 npm install
 ```
 
@@ -67,10 +67,10 @@ Add to `.claude/mcp.json` in your project (or user MCP settings):
 ```json
 {
   "mcpServers": {
-    "nirmiqlearn": {
+    "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/absolute/path/to/NirmiqLearnOS"
+      "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
     }
   }
 }
@@ -82,10 +82,10 @@ Add to Cursor MCP settings (`Settings → Features → MCP`):
 
 ```json
 {
-  "nirmiqlearn": {
+  "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/absolute/path/to/NirmiqLearnOS"
+    "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
   }
 }
 ```
@@ -97,10 +97,10 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "nirmiqlearn": {
+    "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/absolute/path/to/NirmiqLearnOS"
+      "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
     }
   }
 }
@@ -121,16 +121,16 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 | `add_concept_link` | Link a DSA/CS concept to a workspace |
 | `add_daily_log` | Log what you built, understood, and what's still unclear |
 | `get_weak_questions` | Surface questions you've been avoiding or haven't answered |
-| `nirmiq_explain_command` | Explain a shell command in plain English with a risk level |
+| `ncs_explain_command` | Explain a shell command in plain English with a risk level |
 
 ### AI-Powered (Pro — requires `ANTHROPIC_API_KEY`)
 
 | Tool | What it does |
 |------|-------------|
-| `nirmiq_generate_questions` | Paste code → get 5 progressive explain-back questions (beginner to advanced) |
-| `nirmiq_suggest_concepts` | Paste code → get 3–5 underlying DSA/CS concepts with 30-min practice tasks |
-| `nirmiq_debug_assist` | Paste an error → get root cause, top 3 checks, fix, and prevention rule |
-| `nirmiq_analyze_project` | Analyze a local project → auto-populated workspace with questions, concepts, and learning map |
+| `ncs_generate_questions` | Paste code → get 5 progressive explain-back questions (beginner to advanced) |
+| `ncs_suggest_concepts` | Paste code → get 3–5 underlying DSA/CS concepts with 30-min practice tasks |
+| `ncs_debug_assist` | Paste an error → get root cause, top 3 checks, fix, and prevention rule |
+| `ncs_analyze_project` | Analyze a local project → auto-populated workspace with questions, concepts, and learning map |
 
 AI tools use your own Anthropic API key (BYOK). Add it to `.env.local`:
 
@@ -157,11 +157,11 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 
 ## Privacy and security
 
-- **All data is local** — SQLite file at `data/nirmiqlearn.db`. Never leaves your machine.
+- **All data is local** — SQLite file at `data/nirmiqcodesensei.db`. Never leaves your machine.
 - **Zero telemetry** — no analytics, no network calls, no tracking.
 - **Localhost only** — server binds to `127.0.0.1`. Not accessible from your LAN.
 - **MCP uses stdio** — no network socket. Your IDE spawns the server as a child process.
-- **BYOK** — AI tools use your own Anthropic key. Not routed through any CodeSensei server.
+- **BYOK** — AI tools use your own Anthropic key. Not routed through any NirmiqCodeSensei server.
 
 See [SECURITY.md](SECURITY.md) for the full threat model.
 
@@ -194,9 +194,9 @@ This is an MVP. Issues and PRs welcome. See [docs/TRD.md](docs/TRD.md) for archi
 
 **PolyForm Noncommercial 1.0.0** — free for personal, educational, and research use. Commercial use requires permission from the author. See [LICENSE.md](LICENSE.md).
 
-Required Notice: Copyright © 2026 Siddharth Prashoo (https://github.com/SheeshDarth/NirmiqLearnOS)
+Required Notice: Copyright © 2026 Siddharth Prashoo (https://github.com/SheeshDarth/NirmiqCodeSenseiOS)
 
-If CodeSensei helps you, please ⭐ star the repo and credit the project when you share or build on it.
+If NirmiqCodeSensei helps you, please ⭐ star the repo and credit the project when you share or build on it.
 
 ---
 

@@ -1,12 +1,12 @@
 /**
- * NirmiqLearn OS — Project Analyzer Service
+ * NirmiqCodeSensei — Project Analyzer Service
  *
  * Shared analysis logic used by both:
  *   - The web UI (app/(app)/workspaces/import)
- *   - The MCP tool (nirmiq_analyze_project)
+ *   - The MCP tool (ncs_analyze_project)
  *
  * Reads a local project directory, calls Claude API to generate a complete
- * understanding breakdown, and auto-populates a NirmiqLearn workspace.
+ * understanding breakdown, and auto-populates a NirmiqCodeSensei workspace.
  */
 
 import Anthropic from "@anthropic-ai/sdk";

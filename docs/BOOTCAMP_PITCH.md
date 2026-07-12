@@ -29,7 +29,7 @@ I've been following [Bootcamp Name]'s curriculum — the move to AI-assisted cod
 
 But there's a gap I haven't seen anyone solve yet: your students can ship working code with Copilot or Cursor, but when a hiring manager asks them to explain their design decisions — or when they sit a viva — they often can't.
 
-I built something that fixes this. It's called **NirmiqLearn OS**.
+I built something that fixes this. It's called **NirmiqCodeSensei**.
 
 It's a local MCP server that connects to Claude Code, Cursor, and Windsurf. While students build, it automatically:
 - Generates explain-back questions from their code
@@ -46,7 +46,7 @@ Would a 20-minute call next week make sense?
 
 Siddharth Prasad
 siddharthprashoo@gmail.com
-github.com/SheeshDarth/NirmiqLearnOS
+github.com/SheeshDarth/NirmiqCodeSenseiOS
 
 ---
 
@@ -78,7 +78,7 @@ Dear Professor [Name],
 
 I'm reaching out about a tool that might help with a problem I suspect you see in every final-year project viva: students who submit working projects but can't explain the architecture decisions they made.
 
-**NirmiqLearn OS** is a free, open-source, local-first learning OS. It connects to the AI coding tools your students already use (Claude Code, Cursor, Copilot via IDE) and captures:
+**NirmiqCodeSensei** is a free, open-source, local-first learning OS. It connects to the AI coding tools your students already use (Claude Code, Cursor, Copilot via IDE) and captures:
 - Explain-back questions generated from their code
 - DSA/CS concept links (what they built → what fundamental it uses)
 - Structured debug logs
@@ -109,7 +109,7 @@ siddharthprashoo@gmail.com
 
 Let them answer. This is the hook.
 
-> "What I've found is that working code and understood code are increasingly different things. NirmiqLearn is built specifically for that gap."
+> "What I've found is that working code and understood code are increasingly different things. NirmiqCodeSensei is built specifically for that gap."
 
 ### Minute 3–7: Show the app
 1. Open the workspace dashboard — show the modules, explain-back questions, debug logs
@@ -119,9 +119,9 @@ Let them answer. This is the hook.
 ### Minute 7–11: Show the MCP in action
 1. Switch to Claude Code
 2. Say: "This is what happens automatically. I'll show you."
-3. Paste a short function, ask Claude: "Use nirmiq_generate_questions on this code"
+3. Paste a short function, ask Claude: "Use ncs_generate_questions on this code"
 4. Show the 5 questions appear, then get added to the workspace
-5. Ask: "use nirmiq_suggest_concepts" — show the DSA concepts appear
+5. Ask: "use ncs_suggest_concepts" — show the DSA concepts appear
 
 > "This happens inside the IDE your students already use. They don't have to think about it. Their AI assistant does it for them."
 
@@ -175,7 +175,7 @@ Ask: "Does that make sense to try?"
 | Day | Action |
 |-----|--------|
 | +3 | Short follow-up: "Sending a quick follow-up — happy to send a short demo video instead of a call if that's easier." |
-| +7 | LinkedIn connection + short DM: "Sent an email about NirmiqLearn OS — the local MCP server for AI-assisted student accountability. Would love 15 minutes." |
+| +7 | LinkedIn connection + short DM: "Sent an email about NirmiqCodeSensei — the local MCP server for AI-assisted student accountability. Would love 15 minutes." |
 | +14 | Final email: "Last follow-up — if the timing isn't right, totally understood. I'll circle back next semester." |
 
 Three touches, then stop. Don't spam. One quality demo is worth 10 cold emails.

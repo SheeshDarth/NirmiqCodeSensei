@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * NirmiqLearn OS — Post-Bash Session Logger (PostToolUse hook)
+ * NirmiqCodeSensei — Post-Bash Session Logger (PostToolUse hook)
  *
  * Runs AFTER a Bash command. Records the command, a plain-English AI explanation,
- * a risk level, and the outcome to the NirmiqLearn session log — the single place
+ * a risk level, and the outcome to the NirmiqCodeSensei session log — the single place
  * that populates `session_logs`. Runs under tsx so it can call the SAME canonical
  * functions the MCP server uses (explainCommand + createSessionLog): there is no
  * separate hidden LLM pass any more.
@@ -20,18 +20,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const NIRMIQ_ROOT = path.resolve(__dirname, "..");
-const DATA_DIR = path.join(NIRMIQ_ROOT, "data");
+const NCS_ROOT = path.resolve(__dirname, "..");
+const DATA_DIR = path.join(NCS_ROOT, "data");
 
 // The hook runs with cwd = the user's project, but the DB lives under the
-// NirmiqLearn install. Point the DB client at the right data dir before it loads.
+// NirmiqCodeSensei install. Point the DB client at the right data dir before it loads.
 // (Respect a pre-set value so this is testable.)
-if (!process.env.NIRMIQ_DATA_DIR) process.env.NIRMIQ_DATA_DIR = DATA_DIR;
+if (!process.env.NCS_DATA_DIR) process.env.NCS_DATA_DIR = DATA_DIR;
 
-// Load NIRMIQ_ROOT/.env.local so the AI explanation (ANTHROPIC_API_KEY /
-// NIRMIQ_PRO_KEY) and optional NIRMIQ_WORKSPACE_ID are available.
+// Load NCS_ROOT/.env.local so the AI explanation (ANTHROPIC_API_KEY /
+// NCS_PRO_KEY) and optional NCS_WORKSPACE_ID are available.
 function loadEnv() {
-  const envPath = path.join(NIRMIQ_ROOT, ".env.local");
+  const envPath = path.join(NCS_ROOT, ".env.local");
   if (!existsSync(envPath)) return;
   try {
     for (const line of readFileSync(envPath, "utf-8").split("\n")) {
@@ -116,7 +116,7 @@ async function main() {
 
     const { explanation, riskLevel } = await explainCommand(command);
     await createSessionLog({
-      workspaceId: process.env.NIRMIQ_WORKSPACE_ID || undefined,
+      workspaceId: process.env.NCS_WORKSPACE_ID || undefined,
       toolName: "Bash",
       actionSummary: command,
       explanation,

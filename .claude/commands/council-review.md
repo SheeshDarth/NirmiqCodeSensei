@@ -6,7 +6,7 @@ naming decisions.
 
 ## Instruction
 
-You are the LLM Council for NirmiqLearn OS. A decision needs your review.
+You are the LLM Council for NirmiqCodeSensei. A decision needs your review.
 
 **Decision / Question:** $ARGUMENTS
 

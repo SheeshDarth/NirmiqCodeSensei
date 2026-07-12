@@ -1,4 +1,4 @@
-# CodeSensei (formerly NirmiqLearn OS) — Claude Code Context
+# NirmiqCodeSensei (formerly NirmiqCodeSensei) — Claude Code Context
 
 Local-first learning OS: students build with AI but must deeply understand what they built.
 Import a project (local path or GitHub URL) → auto-generated learning map, architecture
@@ -29,7 +29,7 @@ graph, code-grounded DSA breakdown, explain-back questions. No cloud, no telemet
 There is **no Jest/Vitest**. The verification gate after every change is, in order:
 `npm run lint` → `npm run typecheck` → `npm run build`. All three must pass.
 **`npm test`** runs the import-pipeline suite (`tests/import-pipeline.test.mts`, node:test via tsx,
-isolated temp DB via `NIRMIQ_DATA_DIR`) — run it too when touching the analyzer/import/workspace services.
+isolated temp DB via `NCS_DATA_DIR`) — run it too when touching the analyzer/import/workspace services.
 For one-off exploration of service logic, write a **throwaway** `scripts/_*.mts` script, run it with
 `npx tsx scripts/_name.mts`, then **delete it** (scratch files, never committed).
 Don't claim tests ran when they didn't.

@@ -1,7 +1,7 @@
-# CodeSensei — Agent Context (Codex / Generic Agents)
+# NirmiqCodeSensei — Agent Context (Codex / Generic Agents)
 
 ## What This Project Is
-CodeSensei (formerly NirmiqLearn OS) is a local-first web application that helps students understand AI-assisted projects instead of blindly copying them. It turns projects into guided learning systems with explain-back checks, debug logs, DSA bridges, and viva prep.
+NirmiqCodeSensei (formerly NirmiqCodeSensei) is a local-first web application that helps students understand AI-assisted projects instead of blindly copying them. It turns projects into guided learning systems with explain-back checks, debug logs, DSA bridges, and viva prep.
 
 ## Stack
 - Framework: Next.js 16, App Router, TypeScript strict mode

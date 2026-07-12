@@ -1,5 +1,5 @@
 /**
- * NirmiqLearn OS — Knowledge Graph Builder
+ * NirmiqCodeSensei — Knowledge Graph Builder
  *
  * Pure function (no DB, no client libs) that turns a workspace's learning map
  * + concept links into a node/edge graph for the interactive visualization.

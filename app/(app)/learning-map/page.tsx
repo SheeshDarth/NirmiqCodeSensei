@@ -35,7 +35,7 @@ export default async function LearningMapIndexPage() {
             No learning maps yet
           </h2>
           <p className="text-xs text-zinc-500 mb-5 max-w-sm mx-auto">
-            Import a project and CodeSensei generates a full learning map
+            Import a project and NirmiqCodeSensei generates a full learning map
             automatically — what it does, how it works, and what could break.
           </p>
           <Link

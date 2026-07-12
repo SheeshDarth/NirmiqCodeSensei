@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * NirmiqLearn OS — Pre-Bash Safety Guard (PreToolUse hook)
+ * NirmiqCodeSensei — Pre-Bash Safety Guard (PreToolUse hook)
  *
  * Runs BEFORE any Bash command. Pure and fast: no network, no LLM. It only blocks
  * a small set of catastrophically destructive commands. Plain-English explanation
  * and session logging happen AFTER the command in post-bash.mts (PostToolUse) —
- * the single place that records to the NirmiqLearn session log.
+ * the single place that records to the NirmiqCodeSensei session log.
  *
  * Install: run `node hooks/install-hooks.mjs` in your project directory.
  *
@@ -47,7 +47,7 @@ async function main() {
 
   if (BLOCK_PATTERNS.some((p) => p.test(command))) {
     process.stderr.write(
-      `\n🔴 NirmiqLearn: this command looks destructive and has been blocked.\n` +
+      `\n🔴 NirmiqCodeSensei: this command looks destructive and has been blocked.\n` +
       `Command: ${command}\n` +
       `If this was intentional, remove the matching pattern from hooks/pre-bash.mjs.\n\n`
     );

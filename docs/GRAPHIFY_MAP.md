@@ -1,4 +1,4 @@
-# Graphify Knowledge Graph — NirmiqLearn OS
+# Graphify Knowledge Graph — NirmiqCodeSensei
 
 > This file is the living codebase map. Update it whenever a new file, module, or feature is added.
 > AI tools should read this file INSTEAD of scanning the whole repo.
@@ -102,7 +102,7 @@ graph TD
 
 ```mermaid
 graph TD
-    DB[("data/\nnirmiqlearn.db\nSQLite")]
+    DB[("data/\nnirmiqcodesensei.db\nSQLite")]
 
     Schema["lib/db/schema.ts\nDrizzle table definitions"]
     Client["lib/db/client.ts\nDrizzle client instance"]

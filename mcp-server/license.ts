@@ -1,10 +1,10 @@
 /**
- * NirmiqLearn OS — Pro License Verification
+ * NirmiqCodeSensei — Pro License Verification
  *
  * Validates Gumroad license keys for the Pro tier.
  *
  * Flow:
- *   1. Read NIRMIQ_PRO_KEY from environment.
+ *   1. Read NCS_PRO_KEY from environment.
  *   2. Check local cache (data/license-cache.json). If fresh (< 7 days), use it.
  *   3. If stale or missing, call Gumroad's verify API.
  *   4. Write result to cache. Return verdict.
@@ -12,7 +12,7 @@
  * Security:
  *   - Raw key is never stored. Cache stores only SHA-256(key).
  *   - Cache file is gitignored.
- *   - Dev bypass: NIRMIQ_PRO_KEY=dev skips verification (local dev only).
+ *   - Dev bypass: NCS_PRO_KEY=dev skips verification (local dev only).
  *   - Network failure falls back to cached result if available; otherwise invalid.
  */
 
@@ -107,7 +107,7 @@ async function verifyWithGumroad(
  * cached result in < 1ms after the first network call.
  */
 export async function checkLicense(): Promise<LicenseResult> {
-  const key = process.env.NIRMIQ_PRO_KEY?.trim();
+  const key = (process.env.NCS_PRO_KEY ?? process.env.NIRMIQ_PRO_KEY)?.trim();
 
   // Dev/CI bypass — never in production packages
   if (key === "dev" || key === "DEV" || key === "development") {
@@ -154,11 +154,11 @@ export async function checkLicense(): Promise<LicenseResult> {
 // ── Friendly error messages ────────────────────────────────────────────────────
 
 export const NO_PRO_KEY_MSG = [
-  "🔒 AI tools require NirmiqLearn Pro.",
+  "🔒 AI tools require NirmiqCodeSensei Pro.",
   "",
   "1. Get your license key at: https://gumroad.com/l/nirmiqlearn",
-  "2. Add to .env.local in your NirmiqLearnOS directory:",
-  "   NIRMIQ_PRO_KEY=XXXX-XXXX-XXXX-XXXX",
+  "2. Add to .env.local in your NirmiqCodeSenseiOS directory:",
+  "   NCS_PRO_KEY=XXXX-XXXX-XXXX-XXXX",
   "3. Also add your Anthropic API key:",
   "   ANTHROPIC_API_KEY=sk-ant-api03-...",
   "4. Restart the MCP server.",
@@ -169,7 +169,7 @@ export const NO_PRO_KEY_MSG = [
 export const INVALID_KEY_MSG = [
   "🔒 Pro license key not recognised.",
   "",
-  "Check that NIRMIQ_PRO_KEY in .env.local matches the key in your Gumroad receipt.",
+  "Check that NCS_PRO_KEY in .env.local matches the key in your Gumroad receipt.",
   "Keys are case-insensitive. Spaces are ignored.",
   "",
   "If you believe this is an error, email: siddharthprashoo@gmail.com",

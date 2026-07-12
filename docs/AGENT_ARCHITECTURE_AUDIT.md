@@ -1,4 +1,4 @@
-# Agent Architecture Audit — NirmiqLearn OS
+# Agent Architecture Audit — NirmiqCodeSensei
 
 **Date:** 2026-06-21
 **Auditor:** Chief architect review (`/ecc:agent-architecture-audit`)
@@ -11,9 +11,9 @@
 
 **Overall health: HIGH RISK.**
 
-NirmiqLearn OS is simultaneously an **agent** (it calls Claude to analyze code) and a **tool provider** (an MCP server consumed by Claude Code / Cursor / Windsurf). Both roles carry the classic wrapper-layer failures this audit hunts, and three of them are live:
+NirmiqCodeSensei is simultaneously an **agent** (it calls Claude to analyze code) and a **tool provider** (an MCP server consumed by Claude Code / Cursor / Windsurf). Both roles carry the classic wrapper-layer failures this audit hunts, and three of them are live:
 
-- **Primary failure mode:** *Markdown prose used as an internal machine protocol.* The most important data-creating tool (`nirmiq_analyze_project`) asks Claude for a markdown-formatted answer, then **regex-parses that prose** to decide what to write to the database. Any drift in the model's formatting → silent, total data loss with a success message shown to the user.
+- **Primary failure mode:** *Markdown prose used as an internal machine protocol.* The most important data-creating tool (`ncs_analyze_project`) asks Claude for a markdown-formatted answer, then **regex-parses that prose** to decide what to write to the database. Any drift in the model's formatting → silent, total data loss with a success message shown to the user.
 
 - **Most urgent fix:** Replace regex-on-prose parsing in `analyzeProject` with structured outputs (tool-calling / `output_config.format` with a strict JSON schema), and add a post-parse count assertion so zero-extraction becomes a loud error, not a silent "success."
 
@@ -25,7 +25,7 @@ The product's entire tagline is *"know what your AI did."* The irony: **the MCP 
 
 | Field | Value |
 |---|---|
-| Target | NirmiqLearn OS agent surfaces |
+| Target | NirmiqCodeSensei agent surfaces |
 | Entrypoints | MCP stdio server (12 tools); web import Server Action; Claude Code PreToolUse hook |
 | Model stack | `claude-opus-4-8` (adaptive thinking) via `@anthropic-ai/sdk`; local heuristic analyzer as no-key fallback |
 | Layers audited | 6 (tool selection), 7 (tool execution), 8 (tool interpretation), 9 (answer shaping), 11 (hidden repair loops), 12 (persistence) |
@@ -38,7 +38,7 @@ The product's entire tagline is *"know what your AI did."* The irony: **the MCP 
 
 ---
 
-#### C1 — `nirmiq_analyze_project` uses regex-on-LLM-markdown as its persistence protocol
+#### C1 — `ncs_analyze_project` uses regex-on-LLM-markdown as its persistence protocol
 
 **Layer:** 8 (tool interpretation)
 **Evidence:** `mcp-server/ai-tools.ts:431–459`
@@ -90,7 +90,7 @@ But the fourth, `analyzeProject`, **auto-persists** via `createQuestion`/`create
 **Evidence:** `hooks/pre-bash.mjs:80–114, 144–150` vs `mcp-server/index.ts:545–567`
 **Confidence:** 1.0
 
-The documented design (REVIEW-002/003) is: Claude Code hook → `nirmiq_explain_command` MCP tool → `createSessionLog()` → Session Log page. In reality:
+The documented design (REVIEW-002/003) is: Claude Code hook → `ncs_explain_command` MCP tool → `createSessionLog()` → Session Log page. In reality:
 
 - `mcp-server/index.ts:554` **does** call `createSessionLog()` — but nothing invokes this tool, because…
 - `hooks/pre-bash.mjs:100–114` runs its **own** independent `claude-opus-4-8` call (`explainWithAI`) with a *different* prompt, and writes the result to **stderr** (`pre-bash.mjs:147`). It never imports or calls the MCP tool and never touches the database.
@@ -101,7 +101,7 @@ The documented design (REVIEW-002/003) is: Claude Code hook → `nirmiq_explain_
 
 **Root cause:** The hook was implemented as a standalone API caller instead of an MCP client, and as the wrong lifecycle event.
 
-**Recommended fix:** Convert to a PostToolUse hook that calls the `nirmiq_explain_command` MCP tool (single LLM path, single persistence path). Delete `explainWithAI` from the hook entirely. Add a daily call/cost cap.
+**Recommended fix:** Convert to a PostToolUse hook that calls the `ncs_explain_command` MCP tool (single LLM path, single persistence path). Delete `explainWithAI` from the hook entirely. Add a daily call/cost cap.
 
 ---
 
@@ -117,7 +117,7 @@ The documented design (REVIEW-002/003) is: Claude Code hook → `nirmiq_explain_
 
 There are two implementations of "analyze a project," and they produce **materially different** results:
 
-| Capability | Web import (`project-analyzer.service.ts`) | MCP `nirmiq_analyze_project` (`ai-tools.ts`) |
+| Capability | Web import (`project-analyzer.service.ts`) | MCP `ncs_analyze_project` (`ai-tools.ts`) |
 |---|---|---|
 | No-API-key heuristic fallback (`detectStack`) | ✅ | ❌ (hard-requires Pro + key) |
 | Code-grounded DSA findings (`analyzeCode`) | ✅ | ❌ |
@@ -129,7 +129,7 @@ There are two implementations of "analyze a project," and they produce **materia
 
 **Root cause:** The MCP tool was written before/parallel to the import pipeline and never refactored to call the shared service.
 
-**Recommended fix:** Make `nirmiq_analyze_project` a thin wrapper over `lib/services/project-analyzer.service.ts:analyzeProject`. One pipeline, one quality bar.
+**Recommended fix:** Make `ncs_analyze_project` a thin wrapper over `lib/services/project-analyzer.service.ts:analyzeProject`. One pipeline, one quality bar.
 
 ---
 
@@ -177,13 +177,13 @@ return { …, riskLevel: parsed.riskLevel ?? "safe", … };
 
 ---
 
-#### H4 — `nirmiq_analyze_project` is non-idempotent; repeated calls silently spawn duplicate workspaces
+#### H4 — `ncs_analyze_project` is non-idempotent; repeated calls silently spawn duplicate workspaces
 
 **Layer:** 12 (persistence)
 **Evidence:** `mcp-server/ai-tools.ts:251 (imports listWorkspaces)`, `ai-tools.ts:417 (always createWorkspace)`
 **Confidence:** 0.90
 
-`listWorkspaces` is imported but never used for deduplication. Every invocation calls `createWorkspace`, which always inserts. An agent that calls `nirmiq_analyze_project` twice on the same path — a very common agent retry behavior — creates two workspaces with identical content and burns a second full Opus analysis.
+`listWorkspaces` is imported but never used for deduplication. Every invocation calls `createWorkspace`, which always inserts. An agent that calls `ncs_analyze_project` twice on the same path — a very common agent retry behavior — creates two workspaces with identical content and burns a second full Opus analysis.
 
 **Root cause:** No idempotency key (e.g., on resolved path) and no pre-check despite the import being present.
 
@@ -198,7 +198,7 @@ return { …, riskLevel: parsed.riskLevel ?? "safe", … };
 #### M1 — The MCP server does not log its own tool invocations
 
 **Layer:** 12 (persistence / observability)
-**Evidence:** `mcp-server/index.ts:324–584` — only `nirmiq_explain_command` writes to `session_logs`
+**Evidence:** `mcp-server/index.ts:324–584` — only `ncs_explain_command` writes to `session_logs`
 **Confidence:** 0.80
 
 For a product whose differentiator is *"know what your AI did,"* the MCP server records none of its own activity. Eleven of twelve tools leave no audit trail. There is no way to answer "what did the agent do in this workspace via MCP."
@@ -295,7 +295,7 @@ Layer 12 Persistence ............ no tool-call audit trail .....................
 | # | Goal | Why now | Expected effect |
 |---|---|---|---|
 | 1 | **Code-gate extraction in `analyzeProject`** — structured outputs + Zod schema + post-parse count assertion | C1 silently destroys the product's core data on any format drift | Import either persists real data or fails loudly; no more hollow "success" workspaces |
-| 2 | **Unify the analyze pipelines** — make `nirmiq_analyze_project` call `lib/services/project-analyzer.service.ts` | H1: MCP users get a degraded product | One quality bar; graph + code-grounded DSA + full map everywhere |
+| 2 | **Unify the analyze pipelines** — make `ncs_analyze_project` call `lib/services/project-analyzer.service.ts` | H1: MCP users get a degraded product | One quality bar; graph + code-grounded DSA + full map everywhere |
 | 3 | **Repair the session-log path** — convert `pre-bash.mjs` to a PostToolUse hook that calls the MCP tool; delete `explainWithAI` | C3: the flagship "know what your AI did" feature writes nothing | Single LLM path, single persistence path, correct lifecycle |
 | 4 | **Make every MCP tool log itself** — wrap the call handler to append a `session_logs` row | M1: the audit product has no audit trail | The feature the product sells actually works |
 | 5 | **Honor or trim `add_debug_log`'s schema; validate `riskLevel` enum; dedupe workspaces by path** | H2/H3/H4: silent data loss, enum corruption, duplicate state | Tool contracts become truthful and idempotent |
@@ -313,22 +313,22 @@ Layer 12 Persistence ............ no tool-call audit trail .....................
   "executive_verdict": {
     "overall_health": "high_risk",
     "primary_failure_mode": "Markdown LLM prose used as an internal machine protocol; no structured contract between model output and the code that persists it.",
-    "most_urgent_fix": "Replace regex-on-prose extraction in nirmiq_analyze_project with structured outputs + a post-parse count assertion."
+    "most_urgent_fix": "Replace regex-on-prose extraction in ncs_analyze_project with structured outputs + a post-parse count assertion."
   },
   "scope": {
-    "target_name": "NirmiqLearn OS — agent surfaces (MCP server, AI analysis pipeline, Claude Code hook)",
+    "target_name": "NirmiqCodeSensei — agent surfaces (MCP server, AI analysis pipeline, Claude Code hook)",
     "model_stack": ["claude-opus-4-8 (adaptive thinking)", "local heuristic analyzer (no-key fallback)"],
     "layers_to_audit": ["6 tool-selection", "7 tool-execution", "8 tool-interpretation", "9 answer-shaping", "11 hidden-repair-loops", "12 persistence"]
   },
   "findings": [
     { "severity": "critical", "title": "Regex-on-markdown as persistence protocol in analyzeProject", "mechanism": "Model formats output as prose; regex extracts questions/concepts; any drift yields empty result with ?? '' swallowing the failure while a success message is shown.", "source_layer": "8 tool-interpretation", "root_cause": "Free-form LLM prose treated as a typed data-interchange format with no schema/validation.", "evidence_refs": ["mcp-server/ai-tools.ts:431", "mcp-server/ai-tools.ts:449", "mcp-server/ai-tools.ts:462"], "confidence": 0.90, "recommended_fix": "Structured outputs (output_config.format / strict tool) + Zod schema + assert extraction count > 0." },
     { "severity": "critical", "title": "AI tools advertise persistence they do not perform; inconsistent contract", "mechanism": "generateQuestions/suggestConcepts/debugAssist return prose telling the consuming agent to persist; analyzeProject auto-persists. Persistence depends on un-gated downstream re-calls.", "source_layer": "7 tool-execution", "root_cause": "No uniform generate-vs-persist contract across tools.", "evidence_refs": ["mcp-server/ai-tools.ts:127", "mcp-server/ai-tools.ts:182", "mcp-server/ai-tools.ts:241", "mcp-server/ai-tools.ts:441"], "confidence": 0.95, "recommended_fix": "Choose one contract: separate persist tool, or every generator auto-persists and returns IDs." },
-    { "severity": "critical", "title": "Session-log pipeline severed; hook runs hidden parallel LLM pass to stderr", "mechanism": "pre-bash.mjs runs its own claude-opus-4-8 call and writes to stderr, never invoking the MCP tool that calls createSessionLog; also wrong hook lifecycle (PreToolUse for post-outcome data).", "source_layer": "11 hidden-repair-loops", "root_cause": "Hook implemented as standalone API caller and as the wrong event type.", "evidence_refs": ["hooks/pre-bash.mjs:100", "hooks/pre-bash.mjs:147", "mcp-server/index.ts:554"], "confidence": 1.0, "recommended_fix": "Convert to PostToolUse hook calling nirmiq_explain_command; delete explainWithAI; add daily cost cap." },
-    { "severity": "high", "title": "Two divergent analyze-project pipelines with different output quality", "mechanism": "MCP analyzeProject lacks analyzeCode, graphJson, learning-map content, and source-grounded concept links that the web import pipeline produces.", "source_layer": "6 tool-selection", "root_cause": "MCP tool never refactored onto the shared service.", "evidence_refs": ["mcp-server/ai-tools.ts:329", "lib/services/project-analyzer.service.ts"], "confidence": 0.90, "recommended_fix": "Make nirmiq_analyze_project a thin wrapper over project-analyzer.service.ts." },
+    { "severity": "critical", "title": "Session-log pipeline severed; hook runs hidden parallel LLM pass to stderr", "mechanism": "pre-bash.mjs runs its own claude-opus-4-8 call and writes to stderr, never invoking the MCP tool that calls createSessionLog; also wrong hook lifecycle (PreToolUse for post-outcome data).", "source_layer": "11 hidden-repair-loops", "root_cause": "Hook implemented as standalone API caller and as the wrong event type.", "evidence_refs": ["hooks/pre-bash.mjs:100", "hooks/pre-bash.mjs:147", "mcp-server/index.ts:554"], "confidence": 1.0, "recommended_fix": "Convert to PostToolUse hook calling ncs_explain_command; delete explainWithAI; add daily cost cap." },
+    { "severity": "high", "title": "Two divergent analyze-project pipelines with different output quality", "mechanism": "MCP analyzeProject lacks analyzeCode, graphJson, learning-map content, and source-grounded concept links that the web import pipeline produces.", "source_layer": "6 tool-selection", "root_cause": "MCP tool never refactored onto the shared service.", "evidence_refs": ["mcp-server/ai-tools.ts:329", "lib/services/project-analyzer.service.ts"], "confidence": 0.90, "recommended_fix": "Make ncs_analyze_project a thin wrapper over project-analyzer.service.ts." },
     { "severity": "high", "title": "add_debug_log silently discards 4 of 8 accepted fields", "mechanism": "Tool schema accepts actual_cause/fix_summary/lesson_learned/prevention_rule; handler passes only title/errorMessage/suspectedCause to createDebugLog.", "source_layer": "7 tool-execution", "root_cause": "Tool schema not reconciled with the service create signature.", "evidence_refs": ["mcp-server/index.ts:95", "mcp-server/index.ts:417"], "confidence": 1.0, "recommended_fix": "Trim the schema or create-then-update so all fields persist." },
     { "severity": "high", "title": "explainCommand greedy-regex JSON extraction with no enum validation", "mechanism": "/\\{[\\s\\S]+\\}/ spans first-to-last brace; riskLevel cast with `as` and never validated, corrupting downstream emoji + session_logs.", "source_layer": "8 tool-interpretation", "root_cause": "Prose-to-JSON by string match + type assertion instead of runtime validation.", "evidence_refs": ["mcp-server/ai-tools.ts:524", "mcp-server/ai-tools.ts:538"], "confidence": 0.85, "recommended_fix": "messages.parse() with Zod enum for riskLevel; normalize out-of-enum." },
-    { "severity": "high", "title": "nirmiq_analyze_project is non-idempotent; duplicate workspaces on retry", "mechanism": "listWorkspaces imported but unused; every call createWorkspace inserts.", "source_layer": "12 persistence", "root_cause": "No idempotency key on resolved project path.", "evidence_refs": ["mcp-server/ai-tools.ts:251", "mcp-server/ai-tools.ts:417"], "confidence": 0.90, "recommended_fix": "Look up existing workspace by resolved path; update-or-return." },
-    { "severity": "medium", "title": "MCP server does not log its own tool invocations", "mechanism": "Only nirmiq_explain_command writes session_logs; 11/12 tools leave no trail.", "source_layer": "12 persistence", "root_cause": "No call-handler-level audit wrapper.", "evidence_refs": ["mcp-server/index.ts:324"], "confidence": 0.80, "recommended_fix": "Wrap CallToolRequestSchema handler to append a session_logs row per call." },
+    { "severity": "high", "title": "ncs_analyze_project is non-idempotent; duplicate workspaces on retry", "mechanism": "listWorkspaces imported but unused; every call createWorkspace inserts.", "source_layer": "12 persistence", "root_cause": "No idempotency key on resolved project path.", "evidence_refs": ["mcp-server/ai-tools.ts:251", "mcp-server/ai-tools.ts:417"], "confidence": 0.90, "recommended_fix": "Look up existing workspace by resolved path; update-or-return." },
+    { "severity": "medium", "title": "MCP server does not log its own tool invocations", "mechanism": "Only ncs_explain_command writes session_logs; 11/12 tools leave no trail.", "source_layer": "12 persistence", "root_cause": "No call-handler-level audit wrapper.", "evidence_refs": ["mcp-server/index.ts:324"], "confidence": 0.80, "recommended_fix": "Wrap CallToolRequestSchema handler to append a session_logs row per call." },
     { "severity": "medium", "title": "Free-tier explainCommand labels every command riskLevel safe", "mechanism": "basicExplain hardcodes riskLevel:'safe' and is returned whenever Pro gate fails.", "source_layer": "9 answer-shaping", "root_cause": "No static risk heuristic in the free path.", "evidence_refs": ["mcp-server/ai-tools.ts:489"], "confidence": 1.0, "recommended_fix": "Apply static BLOCK/risk patterns in the free path." },
     { "severity": "medium", "title": "get_workspace_summary surfaces progressScore (always 0) as a real signal", "mechanism": "progressScore is never written; MCP summary reports Progress: 0% to consuming agents.", "source_layer": "8 tool-interpretation", "root_cause": "Dead metric exposed via tool output.", "evidence_refs": ["mcp-server/index.ts:338", "mcp-server/index.ts:368"], "confidence": 0.90, "recommended_fix": "Implement a real progress value or omit the field." },
     { "severity": "medium", "title": "Synchronous context gathering bounded only by slice caps", "mechanism": "getFileTree/readKeyFiles run sync IO and silently truncate with .slice; large repos block and lose context.", "source_layer": "performance", "root_cause": "No token counting or truncation signaling.", "evidence_refs": ["mcp-server/ai-tools.ts:270", "mcp-server/ai-tools.ts:344"], "confidence": 0.70, "recommended_fix": "Count tokens before send; tell the user when input was truncated." },

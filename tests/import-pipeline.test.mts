@@ -2,9 +2,9 @@
  * Import-pipeline happy-path tests (audit #32, REVIEW-007).
  *
  * Runner: Node's built-in node:test driven by tsx — `npm test`.
- * Zero new dependencies. The DB is fully isolated: NIRMIQ_DATA_DIR points at a
+ * Zero new dependencies. The DB is fully isolated: NCS_DATA_DIR points at a
  * fresh temp dir (set BEFORE any DB-touching import) and migrations are applied
- * programmatically, so the real data/nirmiqlearn.db is never touched.
+ * programmatically, so the real data/nirmiqcodesensei.db is never touched.
  *
  * Covered: resolveProjectPath, analyzeCode (signals/graph/truncation),
  * analyzeProject local-heuristic end-to-end (extraction → persistence),
@@ -20,9 +20,9 @@ import os from "os";
 
 // ── DB isolation: must happen before any dynamic import below ────────────────
 const dataDir = mkdtempSync(path.join(os.tmpdir(), "nirmiq-test-data-"));
-process.env.NIRMIQ_DATA_DIR = dataDir;
+process.env.NCS_DATA_DIR = dataDir;
 
-// Dynamic imports so lib/db/client binds to the temp NIRMIQ_DATA_DIR.
+// Dynamic imports so lib/db/client binds to the temp NCS_DATA_DIR.
 const { db } = await import("@/lib/db/client");
 const { migrate } = await import("drizzle-orm/better-sqlite3/migrator");
 const schema = await import("@/lib/db/schema");

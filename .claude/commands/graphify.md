@@ -5,7 +5,7 @@ without scanning the whole repo.
 
 ## Instruction
 
-You are working on NirmiqLearn OS. Your job is to identify the **minimal
+You are working on NirmiqCodeSensei. Your job is to identify the **minimal
 set of files** relevant to the task below, using the knowledge graph in
 `docs/GRAPHIFY_MAP.md`.
 

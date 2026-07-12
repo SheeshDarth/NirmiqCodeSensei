@@ -1,4 +1,4 @@
-# Launch Copy — NirmiqLearn OS
+# Launch Copy — NirmiqCodeSensei
 
 Use this file for Gumroad, Reddit, Hacker News, and Twitter/X launches.
 Update version numbers and links before each post.
@@ -7,7 +7,7 @@ Update version numbers and links before each post.
 
 ## Gumroad Product Page
 
-**Product name:** NirmiqLearn OS — Local Learning OS for AI-assisted developers
+**Product name:** NirmiqCodeSensei — Local Learning OS for AI-assisted developers
 
 **Tagline:** Build with AI, but learn like a real engineer.
 
@@ -19,7 +19,7 @@ Update version numbers and links before each post.
 
 You use Cursor, Claude Code, or Copilot to build faster. The code works. But when someone asks you to explain it — in an interview, a viva, a code review, or just to yourself — you realise you don't actually know why it works.
 
-**NirmiqLearn OS is a local-first learning OS that sits inside your IDE and makes you prove you understand what you ship.**
+**NirmiqCodeSensei is a local-first learning OS that sits inside your IDE and makes you prove you understand what you ship.**
 
 It connects to Claude Code, Cursor, and Windsurf via MCP (Model Context Protocol). While you build, your AI assistant can automatically:
 
@@ -35,7 +35,7 @@ It connects to Claude Code, Cursor, and Windsurf via MCP (Model Context Protocol
 
 **What you get:**
 
-✅ The full NirmiqLearn OS app (Next.js, runs locally on http://127.0.0.1:3000)
+✅ The full NirmiqCodeSensei app (Next.js, runs locally on http://127.0.0.1:3000)
 ✅ 10 MCP tools for Claude Code, Cursor, and Windsurf
 ✅ 7 free tools (always work, no API key needed)
 ✅ 3 AI-powered Pro tools (BYOK — uses your own Anthropic key)
@@ -61,8 +61,8 @@ It connects to Claude Code, Cursor, and Windsurf via MCP (Model Context Protocol
 **Setup takes under 5 minutes:**
 
 ```
-git clone https://github.com/SheeshDarth/NirmiqLearnOS
-cd NirmiqLearnOS && npm install
+git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+cd NirmiqCodeSenseiOS && npm install
 npm run db:generate && npm run db:migrate
 npm run dev
 ```
@@ -77,7 +77,7 @@ Then add the MCP config to your IDE (full instructions included).
 No. The 7 free tools work without any API key. The 3 AI-powered tools (question generator, concept identifier, debug analyser) use your own Anthropic key if you choose to add it.
 
 *Does it send my code anywhere?*
-Only when you use the 3 AI Pro tools — your code snippet goes directly to Anthropic's API using your own key. The NirmiqLearn app itself has zero network calls.
+Only when you use the 3 AI Pro tools — your code snippet goes directly to Anthropic's API using your own key. The NirmiqCodeSensei app itself has zero network calls.
 
 *Which IDEs does it support?*
 Claude Code, Cursor, Windsurf. Any IDE that supports MCP stdio servers.
@@ -98,7 +98,7 @@ I've been building projects with AI assistants for a while and noticed a pattern
 
 So I built something to fix that.
 
-**NirmiqLearn OS** is a local-first app that connects to Claude Code, Cursor, or Windsurf via MCP. While you build, your AI assistant can:
+**NirmiqCodeSensei** is a local-first app that connects to Claude Code, Cursor, or Windsurf via MCP. While you build, your AI assistant can:
 
 - Log debug sessions (what was the error, root cause, fix)
 - Generate progressive explain-back questions from your code
@@ -110,7 +110,7 @@ The whole thing runs on your machine. SQLite. Zero telemetry. No account. No clo
 
 **How it works in practice:**
 
-You finish a feature. You tell your Claude Code / Cursor session: *"use nirmiq_generate_questions on this code"*. It comes back with 5 questions:
+You finish a feature. You tell your Claude Code / Cursor session: *"use ncs_generate_questions on this code"*. It comes back with 5 questions:
 
 - Q1: What does this function return if the input is empty?
 - Q3: What is the time complexity and why?
@@ -118,7 +118,7 @@ You finish a feature. You tell your Claude Code / Cursor session: *"use nirmiq_g
 
 You try to answer them. If you can't, you know what to study. If you can, you're ready for any interview or viva on this code.
 
-**GitHub:** https://github.com/SheeshDarth/NirmiqLearnOS
+**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 **Gumroad (setup guide + support):** [link]
 
 It's MIT licence — free to clone and use. Gumroad is just if you want the setup guide and to support development.
@@ -134,7 +134,7 @@ Built a local MCP server that tracks your learning while you build — 10 tools 
 
 **Body:**
 
-Quick share: I built **NirmiqLearn OS**, a local MCP server that gives your AI assistant 10 tools for tracking what you learn while you build.
+Quick share: I built **NirmiqCodeSensei**, a local MCP server that gives your AI assistant 10 tools for tracking what you learn while you build.
 
 Free tools: log debug sessions, add explain-back questions, link DSA concepts, track daily logs, surface weak spots.
 
@@ -144,18 +144,18 @@ Everything local. SQLite. No cloud.
 
 MCP config is 5 lines. Works with Claude Code, Cursor, Windsurf.
 
-GitHub: https://github.com/SheeshDarth/NirmiqLearnOS
+GitHub: https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 
 ---
 
 ## Hacker News — Show HN
 
 **Title:**
-Show HN: NirmiqLearn OS — local MCP server that forces you to understand AI-generated code
+Show HN: NirmiqCodeSensei — local MCP server that forces you to understand AI-generated code
 
 **Body:**
 
-NirmiqLearn OS is a local-first learning OS that connects to Claude Code, Cursor, and Windsurf via MCP. The idea: if you're building with AI assistants, you should still be able to explain what you shipped.
+NirmiqCodeSensei is a local-first learning OS that connects to Claude Code, Cursor, and Windsurf via MCP. The idea: if you're building with AI assistants, you should still be able to explain what you shipped.
 
 It gives your AI assistant 10 MCP tools:
 
@@ -166,7 +166,7 @@ It gives your AI assistant 10 MCP tools:
 
 The whole thing runs on your machine — Next.js 16 app, SQLite via Drizzle ORM, MCP server over stdio. Zero telemetry, zero cloud, zero network calls by default.
 
-GitHub: https://github.com/SheeshDarth/NirmiqLearnOS
+GitHub: https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 MIT licence.
 
 The immediate use case is engineering students who build with Cursor/Claude Code for assignments and then struggle to explain the code in vivas or interviews. But it's also useful for any developer who wants to build a habit of understanding, not just shipping.
@@ -180,12 +180,12 @@ Happy to discuss the MCP architecture or the local-first storage model.
 **Tweet 1:**
 I built a local MCP server that sits inside Cursor/Claude Code and makes you prove you understand the AI-generated code you ship.
 
-It's called NirmiqLearn OS. Thread 🧵
+It's called NirmiqCodeSensei. Thread 🧵
 
 **Tweet 2:**
 The problem: you use AI to build faster. The code works. But in an interview or viva, someone asks WHY it works — and you realise you don't actually know.
 
-NirmiqLearn is built for this exact problem.
+NirmiqCodeSensei is built for this exact problem.
 
 **Tweet 3:**
 It gives your AI assistant 10 MCP tools:
@@ -211,7 +211,7 @@ Setup: clone → npm install → npm run dev → add 5 lines of MCP config to yo
 
 Works with Claude Code, Cursor, Windsurf.
 
-GitHub (MIT): https://github.com/SheeshDarth/NirmiqLearnOS
+GitHub (MIT): https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 
 **Tweet 6:**
 Who it's for:
@@ -227,10 +227,10 @@ Not for: people who want a cloud tool. This is local-first, always.
 
 ### mcp.so
 
-**Name:** NirmiqLearn OS
+**Name:** NirmiqCodeSensei
 **Category:** Education / Developer Tools
 **Description:** Local-first learning OS for AI-assisted developers. 10 MCP tools for Claude Code, Cursor, and Windsurf. Log debug sessions, generate explain-back questions, map DSA concepts, track daily learning — entirely on your machine.
-**GitHub:** https://github.com/SheeshDarth/NirmiqLearnOS
+**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSenseiOS
 **Transport:** stdio
 **Install command:** `npm run mcp` (after cloning + `npm install`)
 
@@ -240,16 +240,16 @@ Same as mcp.so. Use `mcp-manifest.json` from the repo root.
 
 ### Cursor MCP Marketplace
 
-**Server name:** nirmiqlearn
-**Display name:** NirmiqLearn OS — Learning OS for developers
+**Server name:** nirmiqcodesensei
+**Display name:** NirmiqCodeSensei — Learning OS for developers
 **Short description:** Log what you learn while you build. Debug sessions, explain-back questions, DSA concept mapping — all local, all in your IDE.
 **Config:**
 ```json
 {
-  "nirmiqlearn": {
+  "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/path/to/NirmiqLearnOS"
+    "cwd": "/path/to/NirmiqCodeSenseiOS"
   }
 }
 ```

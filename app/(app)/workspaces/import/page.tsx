@@ -59,7 +59,7 @@ export default function ImportProjectPage() {
           <h1 className="text-lg font-semibold text-zinc-100">Import Project</h1>
         </div>
         <p className="text-sm text-zinc-500">
-          Paste a GitHub URL or a local folder path. CodeSensei reads the
+          Paste a GitHub URL or a local folder path. NirmiqCodeSensei reads the
           codebase and generates a full learning breakdown — what it does, how it
           works, and what you need to understand to own it.
         </p>
@@ -165,7 +165,7 @@ export default function ImportProjectPage() {
           {/* What will happen */}
           <div className="bg-[#0d1117] border border-zinc-800 rounded-lg p-5">
             <p className="text-xs font-medium text-zinc-400 mb-3">
-              What CodeSensei will generate:
+              What NirmiqCodeSensei will generate:
             </p>
             <div className="space-y-2">
               {[

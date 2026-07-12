@@ -1,9 +1,9 @@
-# Debugging Guide — NirmiqLearn OS
+# Debugging Guide — NirmiqCodeSensei
 
 ## 1. Debugging Philosophy
 
 Debugging is not just fixing errors.
-In NirmiqLearn OS, every bug must become:
+In NirmiqCodeSensei, every bug must become:
 - a diagnosis exercise
 - a learning artifact
 - a future prevention rule

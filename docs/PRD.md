@@ -1,14 +1,14 @@
-# Product Requirements Document — NirmiqLearn OS
+# Product Requirements Document — NirmiqCodeSensei
 
 ## 1. Product Name
 
-NirmiqLearn OS
+NirmiqCodeSensei
 
 ## 2. Product Vision
 
-NirmiqLearn OS is a local-first AI learning operating system that helps students understand, explain, debug, and master AI-assisted projects instead of blindly vibe-coding them.
+NirmiqCodeSensei is a local-first AI learning operating system that helps students understand, explain, debug, and master AI-assisted projects instead of blindly vibe-coding them.
 
-The product exists because AI tools make project creation easier, but they can weaken real understanding if the student only copies generated code. NirmiqLearn OS solves this by transforming projects, documents, and codebases into guided learning paths, explain-back checks, DSA links, debug exercises, and portfolio-ready project understanding.
+The product exists because AI tools make project creation easier, but they can weaken real understanding if the student only copies generated code. NirmiqCodeSensei solves this by transforming projects, documents, and codebases into guided learning paths, explain-back checks, DSA links, debug exercises, and portfolio-ready project understanding.
 
 ## 3. Target User
 
@@ -244,7 +244,7 @@ Excluded from MVP:
 
 ## 12. Product Philosophy
 
-NirmiqLearn OS should not be a generic AI chatbot.
+NirmiqCodeSensei should not be a generic AI chatbot.
 
 It should feel like:
 - A personal academic operating system

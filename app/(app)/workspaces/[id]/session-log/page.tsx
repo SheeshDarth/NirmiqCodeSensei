@@ -109,11 +109,11 @@ export default async function SessionLogPage({
               Run this from your project directory:
             </p>
             <code className="text-xs text-cyan-300 font-mono block">
-              node /path/to/NirmiqLearnOS/hooks/install-hooks.mjs
+              node /path/to/NirmiqCodeSenseiOS/hooks/install-hooks.mjs
             </code>
           </div>
           <p className="text-xs text-zinc-600 mt-3">
-            Or ask Claude Code: &ldquo;use nirmiq_explain_command to explain your next command&rdquo;
+            Or ask Claude Code: &ldquo;use ncs_explain_command to explain your next command&rdquo;
           </p>
         </div>
       )}

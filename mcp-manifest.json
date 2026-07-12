@@ -1,12 +1,12 @@
 {
-  "name": "nirmiqlearn",
-  "display_name": "CodeSensei",
+  "name": "nirmiqcodesensei",
+  "display_name": "NirmiqCodeSensei",
   "description": "A local-first learning OS that connects to your IDE. Log debug sessions, generate explain-back questions, map DSA concepts, and track daily learning — all inside Claude Code, Cursor, or Windsurf. Your data never leaves your machine.",
   "version": "0.1.0",
   "author": "Siddharth Prasad",
   "license": "PolyForm-Noncommercial-1.0.0",
-  "homepage": "https://github.com/SheeshDarth/NirmiqLearnOS",
-  "repository": "https://github.com/SheeshDarth/NirmiqLearnOS",
+  "homepage": "https://github.com/SheeshDarth/NirmiqCodeSenseiOS",
+  "repository": "https://github.com/SheeshDarth/NirmiqCodeSenseiOS",
   "categories": ["education", "developer-tools", "productivity", "learning"],
   "tags": [
     "learning",
@@ -25,12 +25,12 @@
   "command": {
     "type": "npm",
     "script": "mcp",
-    "cwd": "<path-to-NirmiqLearnOS>"
+    "cwd": "<path-to-NirmiqCodeSenseiOS>"
   },
   "install": {
     "steps": [
-      "git clone https://github.com/SheeshDarth/NirmiqLearnOS.git",
-      "cd NirmiqLearnOS && npm install",
+      "git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git",
+      "cd NirmiqCodeSenseiOS && npm install",
       "npm run db:generate && npm run db:migrate",
       "npm run mcp"
     ]
@@ -72,28 +72,28 @@
       "tier": "free"
     },
     {
-      "name": "nirmiq_explain_command",
-      "description": "Explain a shell command in plain English and log it to the session log (what it does, why it ran, what it changes, risk level). Works without a key (basic static explanation); set ANTHROPIC_API_KEY + NIRMIQ_PRO_KEY for AI-powered explanations.",
+      "name": "ncs_explain_command",
+      "description": "Explain a shell command in plain English and log it to the session log (what it does, why it ran, what it changes, risk level). Works without a key (basic static explanation); set ANTHROPIC_API_KEY + NCS_PRO_KEY for AI-powered explanations.",
       "tier": "free"
     },
     {
-      "name": "nirmiq_generate_questions",
+      "name": "ncs_generate_questions",
       "description": "AI: Generate 5 progressive explain-back questions from a code snippet (beginner to advanced). Requires ANTHROPIC_API_KEY.",
       "tier": "pro"
     },
     {
-      "name": "nirmiq_suggest_concepts",
+      "name": "ncs_suggest_concepts",
       "description": "AI: Identify 3-5 underlying DSA/CS concepts in a code snippet with 30-min practice tasks. Requires ANTHROPIC_API_KEY.",
       "tier": "pro"
     },
     {
-      "name": "nirmiq_debug_assist",
+      "name": "ncs_debug_assist",
       "description": "AI: Analyse an error message and return root cause, top 3 checks, fix, and prevention rule. Requires ANTHROPIC_API_KEY.",
       "tier": "pro"
     },
     {
-      "name": "nirmiq_analyze_project",
-      "description": "AI: Point CodeSensei at a project folder and get a full understanding breakdown — plain-English overview, simplified stack, architecture, key files, learning map, 10 explain-back questions, and 5 CS concepts. Creates and populates a workspace automatically. Requires NIRMIQ_PRO_KEY + ANTHROPIC_API_KEY.",
+      "name": "ncs_analyze_project",
+      "description": "AI: Point NirmiqCodeSensei at a project folder and get a full understanding breakdown — plain-English overview, simplified stack, architecture, key files, learning map, 10 explain-back questions, and 5 CS concepts. Creates and populates a workspace automatically. Requires NCS_PRO_KEY + ANTHROPIC_API_KEY.",
       "tier": "pro"
     }
   ],
