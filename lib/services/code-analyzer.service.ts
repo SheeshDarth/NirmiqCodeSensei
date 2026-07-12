@@ -111,6 +111,9 @@ function walk(
   for (const e of entries) {
     if (acc.length >= MAX_FILES) { state.truncated = true; return; }
     if (e.name.startsWith(".") && e.name !== ".") continue;
+    // Never follow symlinks — a link could point outside the import root and
+    // leak files the user never meant to expose (e.g. ../../.ssh/id_rsa).
+    if (e.isSymbolicLink()) continue;
     if (e.isDirectory()) {
       if (IGNORE_DIRS.has(e.name)) continue;
       walk(path.join(dir, e.name), root, acc, state);

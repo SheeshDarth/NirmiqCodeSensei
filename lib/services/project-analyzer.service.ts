@@ -12,9 +12,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import * as z from "zod/v4";
-import { readdirSync, readFileSync, existsSync, mkdirSync } from "fs";
-import { execSync } from "child_process";
+import { readdirSync, readFileSync, existsSync, mkdirSync, realpathSync } from "fs";
+import { execFileSync } from "child_process";
 import path from "path";
+import os from "os";
 import {
   createWorkspace,
   listWorkspaces,
@@ -62,16 +63,31 @@ const KEY_FILES = [
 // Validate GitHub URL — only HTTPS GitHub URLs allowed
 const GITHUB_URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?$/;
 
-// Block known OS system directories to prevent accidental sensitive-file capture
+// Block OS system directories AND per-user credential stores, so an imported
+// project can never trick the analyzer into reading secrets or system files.
+const HOME = os.homedir();
 const BLOCKED_PATH_PREFIXES = [
-  "/etc", "/sys", "/proc", "/usr", "/bin", "/sbin", "/boot", "/dev", "/lib",
-  "/System", "/private/etc",
-  "C:\\Windows", "C:\\Program Files", "C:\\Program Files (x86)",
+  "/etc", "/sys", "/proc", "/usr", "/bin", "/sbin", "/boot", "/dev", "/lib", "/root",
+  "/System", "/Library", "/private/etc",
+  "C:\\Windows", "C:\\Program Files", "C:\\Program Files (x86)", "C:\\ProgramData",
+  // Per-user credential / key stores (any OS)
+  path.join(HOME, ".ssh"), path.join(HOME, ".aws"), path.join(HOME, ".gnupg"),
+  path.join(HOME, ".kube"), path.join(HOME, ".docker"), path.join(HOME, ".config", "gcloud"),
 ].map((p) => path.normalize(p).toLowerCase());
 
+// Resolve symlinks first so a link pointing at a blocked dir can't slip through,
+// then match on a full path-segment boundary (so "/lib" never matches "/library").
 function isSystemPath(p: string): boolean {
-  const normalized = path.normalize(p).toLowerCase();
-  return BLOCKED_PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+  let resolved = p;
+  try {
+    resolved = realpathSync(p);
+  } catch {
+    /* not on disk yet — fall back to the literal path */
+  }
+  const normalized = path.normalize(resolved).toLowerCase();
+  return BLOCKED_PATH_PREFIXES.some(
+    (prefix) => normalized === prefix || normalized.startsWith(prefix + path.sep)
+  );
 }
 
 export const IMPORTED_PROJECTS_DIR = path.resolve(
@@ -207,14 +223,16 @@ export function cloneOrPullRepo(githubUrl: string, destPath: string): void {
   mkdirSync(path.dirname(destPath), { recursive: true });
 
   if (existsSync(path.join(destPath, ".git"))) {
-    // Repo already cloned — pull latest
-    execSync("git pull --ff-only", {
+    // Repo already cloned — pull latest. execFileSync (no shell) so nothing in
+    // the path can be interpreted as a shell command.
+    execFileSync("git", ["pull", "--ff-only"], {
       cwd: destPath,
       timeout: 30_000,
       stdio: "pipe",
     });
   } else {
-    execSync(`git clone "${githubUrl}" "${destPath}"`, {
+    // "--" terminates option parsing so a crafted URL can't inject git flags.
+    execFileSync("git", ["clone", "--", githubUrl, destPath], {
       timeout: 120_000,
       stdio: "pipe",
     });
@@ -455,7 +473,7 @@ export async function reanalyzeProject(
     existsSync(path.join(resolvedPath, ".git"))
   ) {
     try {
-      execSync("git pull --ff-only", {
+      execFileSync("git", ["pull", "--ff-only"], {
         cwd: resolvedPath,
         timeout: 30_000,
         stdio: "pipe",

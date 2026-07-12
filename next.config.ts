@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const securityHeaders = [
   // Prevent browsers from sniffing MIME types
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -17,10 +19,10 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js requires unsafe-inline for its runtime styles;
-      // unsafe-eval is needed for hot-reload in dev only — acceptable for
-      // a local tool that never runs in a shared/production environment.
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      // Next.js requires unsafe-inline for its runtime styles. unsafe-eval is
+      // only needed for dev hot-reload — it is dropped from production builds so
+      // a distributed 1.0 never ships an eval-permitting CSP.
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
