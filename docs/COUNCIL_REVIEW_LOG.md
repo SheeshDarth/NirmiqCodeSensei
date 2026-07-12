@@ -529,7 +529,7 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 **Decision:**
 > Approve the MS1–MS7 megasprint roadmap (`docs/MEGASPRINT_ROADMAP.md`); ship each deeply and independently, gated and council-logged, to a distributable **v1.0.0** as **NirmiqCodeSensei**.
 
-**Status:** 🔄 In progress — MS1 (deep rename) executing on `feature/codesensei`.
+**Status:** 🔄 In progress. **MS1 ✅ complete** — full deep rename to NirmiqCodeSensei (display + package + DB file with boot migration + `NCS_*` env with fallback + `ncs_*` MCP tools); GitHub repo renamed `SheeshDarth/NirmiqCodeSensei`; gate green (lint/typecheck/build/test 16/16). Branch `feature/codesensei` unpushed pending user go-ahead. MS2 (security) next.
 
 ---
 

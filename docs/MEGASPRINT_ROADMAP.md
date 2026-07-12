@@ -16,7 +16,7 @@ free + BYOK path (`ANTHROPIC_API_KEY` optional; offline analyzer is the default)
 
 | # | Megasprint | The one problem it solves | Exit criteria |
 |---|---|---|---|
-| **MS1** | Identity | Final distribution-ready name everywhere, incl. DB file / env / MCP internals, done once and safely | `git grep -in nirmiqlearn` only shows intentional refs; app boots on the migrated DB; gate green; repo renamed |
+| **MS1** ✅ | Identity | Final distribution-ready name everywhere, incl. DB file / env / MCP internals, done once and safely | **DONE** — deep rename shipped; repo → `SheeshDarth/NirmiqCodeSensei`; DB boot-migration + `NCS_*` env fallback + `ncs_*` tools; gate green (16/16) |
 | **MS2** | Security | The app ingests users' private source code — it must be provably safe | Security lens A on self-scan; `npm audit` clean in CI; no `unsafe-eval` in prod CSP |
 | **MS3** | Architecture & Data Integrity | Kill load-bearing hacks (description-as-path, JSON modules, no backup) | `sourcePath` column; cross-feature FKs (#27/#28); backup/restore; error/loading boundaries |
 | **MS4** | Algorithms & Analysis Depth | The analysis *is* the product — make it rigorous and calibrated | Defensible self-scan grade; incremental re-analysis; documented large-repo benchmarks |
