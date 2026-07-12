@@ -38,7 +38,7 @@ Next.js App Router
 ## 3. Folder Structure
 
 ```text
-NirmiqCodeSenseiOS/
+NirmiqCodeSensei/
   app/
     page.tsx
     dashboard/

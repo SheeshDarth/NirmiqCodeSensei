@@ -107,7 +107,7 @@ export default function SettingsPage() {
     "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/path/to/NirmiqCodeSenseiOS"
+      "cwd": "/path/to/NirmiqCodeSensei"
     }
   }
 }`}
@@ -123,7 +123,7 @@ export default function SettingsPage() {
   "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/path/to/NirmiqCodeSenseiOS"
+    "cwd": "/path/to/NirmiqCodeSensei"
   }
 }`}
             </pre>
@@ -257,12 +257,12 @@ export default function SettingsPage() {
         <p className="text-xs text-zinc-700 font-mono">
           NirmiqCodeSensei v0.1.0 ·{" "}
           <a
-            href="https://github.com/SheeshDarth/NirmiqCodeSenseiOS"
+            href="https://github.com/SheeshDarth/NirmiqCodeSensei"
             className="hover:text-zinc-500 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
-            github.com/SheeshDarth/NirmiqCodeSenseiOS
+            github.com/SheeshDarth/NirmiqCodeSensei
           </a>
         </p>
       </div>

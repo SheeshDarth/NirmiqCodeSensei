@@ -21,7 +21,7 @@ The product helps students:
 ## Repository
 
 GitHub repository:
-https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+https://github.com/SheeshDarth/NirmiqCodeSensei
 
 ## Current Build Goal
 

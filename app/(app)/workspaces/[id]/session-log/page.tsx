@@ -109,7 +109,7 @@ export default async function SessionLogPage({
               Run this from your project directory:
             </p>
             <code className="text-xs text-cyan-300 font-mono block">
-              node /path/to/NirmiqCodeSenseiOS/hooks/install-hooks.mjs
+              node /path/to/NirmiqCodeSensei/hooks/install-hooks.mjs
             </code>
           </div>
           <p className="text-xs text-zinc-600 mt-3">

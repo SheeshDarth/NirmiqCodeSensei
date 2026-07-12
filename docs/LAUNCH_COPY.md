@@ -61,8 +61,8 @@ It connects to Claude Code, Cursor, and Windsurf via MCP (Model Context Protocol
 **Setup takes under 5 minutes:**
 
 ```
-git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS
-cd NirmiqCodeSenseiOS && npm install
+git clone https://github.com/SheeshDarth/NirmiqCodeSensei
+cd NirmiqCodeSensei && npm install
 npm run db:generate && npm run db:migrate
 npm run dev
 ```
@@ -118,7 +118,7 @@ You finish a feature. You tell your Claude Code / Cursor session: *"use ncs_gene
 
 You try to answer them. If you can't, you know what to study. If you can, you're ready for any interview or viva on this code.
 
-**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSensei
 **Gumroad (setup guide + support):** [link]
 
 It's MIT licence — free to clone and use. Gumroad is just if you want the setup guide and to support development.
@@ -144,7 +144,7 @@ Everything local. SQLite. No cloud.
 
 MCP config is 5 lines. Works with Claude Code, Cursor, Windsurf.
 
-GitHub: https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+GitHub: https://github.com/SheeshDarth/NirmiqCodeSensei
 
 ---
 
@@ -166,7 +166,7 @@ It gives your AI assistant 10 MCP tools:
 
 The whole thing runs on your machine — Next.js 16 app, SQLite via Drizzle ORM, MCP server over stdio. Zero telemetry, zero cloud, zero network calls by default.
 
-GitHub: https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+GitHub: https://github.com/SheeshDarth/NirmiqCodeSensei
 MIT licence.
 
 The immediate use case is engineering students who build with Cursor/Claude Code for assignments and then struggle to explain the code in vivas or interviews. But it's also useful for any developer who wants to build a habit of understanding, not just shipping.
@@ -211,7 +211,7 @@ Setup: clone → npm install → npm run dev → add 5 lines of MCP config to yo
 
 Works with Claude Code, Cursor, Windsurf.
 
-GitHub (MIT): https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+GitHub (MIT): https://github.com/SheeshDarth/NirmiqCodeSensei
 
 **Tweet 6:**
 Who it's for:
@@ -230,7 +230,7 @@ Not for: people who want a cloud tool. This is local-first, always.
 **Name:** NirmiqCodeSensei
 **Category:** Education / Developer Tools
 **Description:** Local-first learning OS for AI-assisted developers. 10 MCP tools for Claude Code, Cursor, and Windsurf. Log debug sessions, generate explain-back questions, map DSA concepts, track daily learning — entirely on your machine.
-**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+**GitHub:** https://github.com/SheeshDarth/NirmiqCodeSensei
 **Transport:** stdio
 **Install command:** `npm run mcp` (after cloning + `npm install`)
 
@@ -249,7 +249,7 @@ Same as mcp.so. Use `mcp-manifest.json` from the repo root.
   "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/path/to/NirmiqCodeSenseiOS"
+    "cwd": "/path/to/NirmiqCodeSensei"
   }
 }
 ```

@@ -3,8 +3,8 @@
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
-cd NirmiqCodeSenseiOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSensei.git
+cd NirmiqCodeSensei
 ```
 
 ## 2. Initialize App if Empty

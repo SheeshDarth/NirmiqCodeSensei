@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "author": "Siddharth Prasad",
   "license": "PolyForm-Noncommercial-1.0.0",
-  "homepage": "https://github.com/SheeshDarth/NirmiqCodeSenseiOS",
-  "repository": "https://github.com/SheeshDarth/NirmiqCodeSenseiOS",
+  "homepage": "https://github.com/SheeshDarth/NirmiqCodeSensei",
+  "repository": "https://github.com/SheeshDarth/NirmiqCodeSensei",
   "categories": ["education", "developer-tools", "productivity", "learning"],
   "tags": [
     "learning",
@@ -25,12 +25,12 @@
   "command": {
     "type": "npm",
     "script": "mcp",
-    "cwd": "<path-to-NirmiqCodeSenseiOS>"
+    "cwd": "<path-to-NirmiqCodeSensei>"
   },
   "install": {
     "steps": [
-      "git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git",
-      "cd NirmiqCodeSenseiOS && npm install",
+      "git clone https://github.com/SheeshDarth/NirmiqCodeSensei.git",
+      "cd NirmiqCodeSensei && npm install",
       "npm run db:generate && npm run db:migrate",
       "npm run mcp"
     ]

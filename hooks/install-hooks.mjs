@@ -4,7 +4,7 @@
  *
  * Run from inside any project directory to install the vibe coding companion:
  *
- *   node /path/to/NirmiqCodeSenseiOS/hooks/install-hooks.mjs
+ *   node /path/to/NirmiqCodeSensei/hooks/install-hooks.mjs
  *
  * Installs two Claude Code hooks into .claude/settings.json (existing settings
  * and hooks are preserved):

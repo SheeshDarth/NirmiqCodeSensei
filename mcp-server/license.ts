@@ -157,7 +157,7 @@ export const NO_PRO_KEY_MSG = [
   "🔒 AI tools require NirmiqCodeSensei Pro.",
   "",
   "1. Get your license key at: https://gumroad.com/l/nirmiqlearn",
-  "2. Add to .env.local in your NirmiqCodeSenseiOS directory:",
+  "2. Add to .env.local in your NirmiqCodeSensei directory:",
   "   NCS_PRO_KEY=XXXX-XXXX-XXXX-XXXX",
   "3. Also add your Anthropic API key:",
   "   ANTHROPIC_API_KEY=sk-ant-api03-...",

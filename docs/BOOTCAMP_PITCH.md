@@ -46,7 +46,7 @@ Would a 20-minute call next week make sense?
 
 Siddharth Prasad
 siddharthprashoo@gmail.com
-github.com/SheeshDarth/NirmiqCodeSenseiOS
+github.com/SheeshDarth/NirmiqCodeSensei
 
 ---
 
