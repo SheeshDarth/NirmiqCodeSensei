@@ -3,13 +3,13 @@
 ## 1. Repository
 
 Target:
-https://github.com/SheeshDarth/NirmiqCodeSenseiOS
+https://github.com/SheeshDarth/NirmiqCodeSensei
 
 ## 2. Initial Setup
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
-cd NirmiqCodeSenseiOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSensei.git
+cd NirmiqCodeSensei
 ```
 
 If repo is empty:

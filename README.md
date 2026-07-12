@@ -35,8 +35,8 @@ Everything is stored locally in SQLite. Nothing leaves your machine.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
-cd NirmiqCodeSenseiOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSensei.git
+cd NirmiqCodeSensei
 npm install
 ```
 
@@ -70,7 +70,7 @@ Add to `.claude/mcp.json` in your project (or user MCP settings):
     "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
+      "cwd": "/absolute/path/to/NirmiqCodeSensei"
     }
   }
 }
@@ -85,7 +85,7 @@ Add to Cursor MCP settings (`Settings → Features → MCP`):
   "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
+    "cwd": "/absolute/path/to/NirmiqCodeSensei"
   }
 }
 ```
@@ -100,7 +100,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
     "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/absolute/path/to/NirmiqCodeSenseiOS"
+      "cwd": "/absolute/path/to/NirmiqCodeSensei"
     }
   }
 }
@@ -194,7 +194,7 @@ This is an MVP. Issues and PRs welcome. See [docs/TRD.md](docs/TRD.md) for archi
 
 **PolyForm Noncommercial 1.0.0** — free for personal, educational, and research use. Commercial use requires permission from the author. See [LICENSE.md](LICENSE.md).
 
-Required Notice: Copyright © 2026 Siddharth Prashoo (https://github.com/SheeshDarth/NirmiqCodeSenseiOS)
+Required Notice: Copyright © 2026 Siddharth Prashoo (https://github.com/SheeshDarth/NirmiqCodeSensei)
 
 If NirmiqCodeSensei helps you, please ⭐ star the repo and credit the project when you share or build on it.
 

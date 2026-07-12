@@ -27,7 +27,7 @@ import { analyzeProject as analyzeProjectService } from "../lib/services/project
 const NO_ANTHROPIC_KEY_MSG = [
   "🔑 AI tools also need your Anthropic API key.",
   "",
-  "Add to .env.local in your NirmiqCodeSenseiOS directory:",
+  "Add to .env.local in your NirmiqCodeSensei directory:",
   "   ANTHROPIC_API_KEY=sk-ant-api03-...",
   "",
   "Get a key at https://console.anthropic.com/",

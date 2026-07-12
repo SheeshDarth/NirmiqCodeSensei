@@ -22,8 +22,8 @@ learning trails.
 
 ```bash
 # Clone the repo
-git clone https://github.com/SheeshDarth/NirmiqCodeSenseiOS.git
-cd NirmiqCodeSenseiOS
+git clone https://github.com/SheeshDarth/NirmiqCodeSensei.git
+cd NirmiqCodeSensei
 
 # Install dependencies
 npm install
@@ -42,7 +42,7 @@ Open **http://127.0.0.1:3000** — the dashboard appears. The app binds to local
 
 ## Step 2 — Pro key setup
 
-Students add two lines to `.env.local` in the NirmiqCodeSenseiOS directory:
+Students add two lines to `.env.local` in the NirmiqCodeSensei directory:
 
 ```env
 NCS_PRO_KEY=XXXX-XXXX-XXXX-XXXX   # Provided by instructor
@@ -69,7 +69,7 @@ Create or edit `.claude/mcp.json` in any project directory:
     "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "C:/path/to/NirmiqCodeSenseiOS"
+      "cwd": "C:/path/to/NirmiqCodeSensei"
     }
   }
 }
@@ -89,7 +89,7 @@ Open Settings → Features → MCP Servers → Add:
   "nirmiqcodesensei": {
     "command": "npm",
     "args": ["run", "mcp"],
-    "cwd": "C:/path/to/NirmiqCodeSenseiOS"
+    "cwd": "C:/path/to/NirmiqCodeSensei"
   }
 }
 ```
@@ -104,7 +104,7 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
     "nirmiqcodesensei": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "C:/path/to/NirmiqCodeSenseiOS"
+      "cwd": "C:/path/to/NirmiqCodeSensei"
     }
   }
 }
@@ -182,12 +182,12 @@ with their name and cohort — a replacement key is issued within 24 hours.
 
 **MCP tools not appearing in the IDE**
 → Check that `npm run mcp` is running in a terminal
-→ Verify the `cwd` path in your MCP config is the absolute path to NirmiqCodeSenseiOS
+→ Verify the `cwd` path in your MCP config is the absolute path to NirmiqCodeSensei
 → Restart the IDE after updating MCP config
 
 **"Pro license key not recognised"**
 → Check for typos in `NCS_PRO_KEY` — the key is case-insensitive but spaces break it
-→ Make sure `.env.local` is in the `NirmiqCodeSenseiOS` directory, not the student's project directory
+→ Make sure `.env.local` is in the `NirmiqCodeSensei` directory, not the student's project directory
 → Restart `npm run mcp` after editing `.env.local`
 
 **"Could not verify Pro license — Gumroad unreachable"**
@@ -213,5 +213,5 @@ See [SECURITY.md](../SECURITY.md) and [the privacy policy](http://127.0.0.1:3000
 ## Support
 
 Email: `siddharthprashoo@gmail.com`
-GitHub issues: https://github.com/SheeshDarth/NirmiqCodeSenseiOS/issues
+GitHub issues: https://github.com/SheeshDarth/NirmiqCodeSensei/issues
 Subject line for bootcamp support: `[BOOTCAMP] Your bootcamp name`

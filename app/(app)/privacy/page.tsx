@@ -137,7 +137,7 @@ export default function PrivacyPage() {
           NirmiqCodeSensei is open source. You can read every line of code that
           handles your data at{" "}
           <span className="text-cyan-400 font-mono text-xs">
-            github.com/SheeshDarth/NirmiqCodeSenseiOS
+            github.com/SheeshDarth/NirmiqCodeSensei
           </span>
           . If you find a security issue, open a GitHub issue or contact the
           maintainer directly.
