@@ -26,6 +26,12 @@ data/license-cache.json
 # imported project clones — local only, can be large
 data/imported-projects/
 
+# session tooling artifact (ECC cost/budget tracker)
+data/.session-budget.json
+
+# generated graphify map — regenerated on demand, not committed
+CODEBASE_MAP.md
+
 # logs
 npm-debug.log*
 yarn-debug.log*
