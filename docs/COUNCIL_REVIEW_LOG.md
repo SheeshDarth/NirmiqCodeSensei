@@ -533,6 +533,28 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 
 ---
 
+### REVIEW-012 — MS3 cross-feature module links (#27/#28): normalize now, soft column, or defer?
+
+**Date:** 2026-07-13
+**Trigger:** MS3 scope lists "cross-feature FKs (#27/#28): `moduleId` on questions/concept links (or normalize modules to rows) so the five surfaces are one system, not five siloed tabs." Learning-map modules live as JSON in `learning_maps.modulesJson` (each with an in-blob `mod.id`), not as rows. Before adding a migration, decide the right shape — or whether to build it at all in MS3.
+
+**Council Synthesis:**
+
+**Recommendation:** **Defer #27/#28 out of MS3.** The blocking fact is upstream of the schema: the analysis pipeline emits **no question↔module or concept↔module association**. `computeAnalysis` returns a flat list of ~10 questions and ~5 concepts; the AI `AnalysisSchema` has no per-item `moduleId`, and the local heuristic has none either. Adding a `moduleId` column today therefore creates a **mostly-null FK with nothing to populate it** — schema surface without product value. Unlike the `sourcePath` hack (which blocked a real feature and was fixed this sprint), modules-as-JSON is **not causing any bug or blocking any shipped surface**: the graph, learning map, explain-back, and DSA bridge all work independently, and modules already carry their own `concepts[]` in the JSON. When cohesion is built, the right shape is the **soft `moduleId` text column** (referencing the existing `mod.id`), **not** normalizing modules to a table — normalization means migrating every existing `modulesJson` blob to rows and rewriting `learning-map.service` / `export.service` / `buildLearningMapContent` / progress recompute, which is large, risky, and unjustified for a single-user MVP.
+
+**Risks:**
+- *Silently dropping a listed deliverable* → mitigated by recording this as an explicit, reasoned deferral here and in the roadmap, with the concrete precondition for revisiting (the analyzer must first emit module associations).
+- *Cohesion never gets built* → the natural home is **MS4 (Analysis Depth)**: when the AI/AST analysis is enriched, have it assign each question/concept to a module, then the soft `moduleId` column lands with real data behind it.
+
+**What NOT to Build Yet:** a `modules` table (over-normalization for MVP; big migration, no current bug); a `moduleId` column with no producer (empty FK); any UI regrouping of explain-back / DSA by module until associations exist to group by.
+
+**Decision:**
+> Defer #27/#28 from MS3. MS3's exit criteria (sourcePath ✓, backup/restore ✓, error+loading boundaries ✓, graph reconciliation ✓ — already handled in the learning-map page's `graphJson ?? buildKnowledgeGraph` fallback) are met without it. Revisit in MS4 as a **soft `moduleId` column** once the analyzer emits module associations.
+
+**Status:** ✅ Logged. MS3 shipped: `sourcePath` (migration 0008) + workspace error/loading boundaries + DB durability pragmas/integrity-check/WAL-checkpoint + downloadable backup. Gate green (lint/typecheck/build/test 19/19).
+
+---
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
@@ -547,4 +569,5 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-008 | Whole-project review — polish sprint: GitHub-pull on refresh, blended progress formula (#26), conceptType form enum (#30); defer cohesion/search/graph | ✅ Implemented — 10/10 tests | Pre-1.0 |
 | REVIEW-009 | Landing strategy — preserve 15 commits (rebase-and-merge, no squash); skip paid AI smoke test; F2/F4/F5 cleanup as 3 free commits | ✅ Implemented — cleanup done | Pre-1.0 |
 | REVIEW-010 | CodeSensei program — visible-identity rename, 8-lens local senior-review engine (findings-only optional AI), Obsidian-grade graph | ✅ Implemented — 16/16 tests | v0.2 |
-| REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | 🔄 In progress (MS1) | v0.2→1.0 |
+| REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | 🔄 In progress (MS1✅ MS2✅ MS3✅) | v0.2→1.0 |
+| REVIEW-012 | MS3 cross-feature module links (#27/#28) — defer: no analyzer-produced module associations to populate an FK; revisit in MS4 as a soft `moduleId` column | ✅ Deferred (reasoned) | v0.2→1.0 |
