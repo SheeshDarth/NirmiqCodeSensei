@@ -374,11 +374,17 @@ export async function analyzeProject(
   // a non-archived workspace, don't silently create a duplicate. Tell the user
   // to delete the existing one first (deletion now exists — see deleteWorkspace).
   // Checked before any analysis so a duplicate never costs an API call.
+  // Match on the canonical sourcePath column; fall back to the legacy
+  // "Imported from: <path>" description marker for workspaces created before the
+  // sourcePath migration (their sourcePath is null).
   const importMarker = `Imported from: ${resolvedPath}`;
   const existing = await listWorkspaces();
   if (existing.ok) {
     const dup = existing.data.find(
-      (w) => w.description === importMarker && w.status !== "archived"
+      (w) =>
+        w.status !== "archived" &&
+        (w.sourcePath === resolvedPath ||
+          (w.sourcePath == null && w.description === importMarker))
     );
     if (dup) {
       return {
@@ -398,7 +404,10 @@ export async function analyzeProject(
     title: projectName,
     type: "project",
     goal: `Understand everything about ${projectName} — how it works, why it was built this way, and how to extend or debug it.`,
+    // description keeps the human-readable "Imported from:" label; sourcePath is
+    // the canonical machine-read field (H4 dedup + reanalyze both read it).
     description: `Imported from: ${resolvedPath}`,
+    sourcePath: resolvedPath,
   });
 
   if (!wsResult.ok) {
@@ -442,16 +451,20 @@ export async function reanalyzeProject(
   const ws = await getWorkspaceById(workspaceId);
   if (!ws.ok) return ws;
 
+  // Prefer the canonical sourcePath column; fall back to parsing the legacy
+  // "Imported from: <path>" description marker for pre-migration workspaces.
   const marker = "Imported from: ";
   const description = ws.data.description ?? "";
-  if (!description.startsWith(marker)) {
+  const resolvedPath =
+    ws.data.sourcePath ??
+    (description.startsWith(marker) ? description.slice(marker.length) : "");
+  if (!resolvedPath) {
     return {
       ok: false,
       error:
         "This workspace was not created from an imported project, so there is nothing to refresh.",
     };
   }
-  const resolvedPath = description.slice(marker.length);
 
   if (!existsSync(resolvedPath)) {
     return {

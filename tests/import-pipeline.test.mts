@@ -248,6 +248,18 @@ test("analyzeProject: local-heuristic import populates the workspace", async () 
   assert.equal(maps.length, 1, "learning map auto-created");
 });
 
+test("analyzeProject: writes sourcePath as the canonical import marker", async () => {
+  const [ws] = await db.select().from(schema.workspaces)
+    .where(eq(schema.workspaces.id, workspaceId));
+  assert.equal(
+    ws.sourcePath,
+    path.resolve(projectDir),
+    "sourcePath stores the resolved import path (canonical, not the description hack)"
+  );
+  // description keeps the human-readable label for display + legacy back-compat
+  assert.equal(ws.description, `Imported from: ${path.resolve(projectDir)}`);
+});
+
 test("analyzeProject: persists seniorReviewJson on the learning map", async () => {
   const [map] = await db.select().from(schema.learningMaps)
     .where(eq(schema.learningMaps.workspaceId, workspaceId));
@@ -338,6 +350,27 @@ test("reanalyzeProject: regenerates the senior review", async () => {
     review.generatedAt > seniorGeneratedAt,
     `regenerated (was ${seniorGeneratedAt}, now ${review.generatedAt})`
   );
+});
+
+test("reanalyzeProject: legacy workspaces (null sourcePath) fall back to the description marker", async () => {
+  // Simulate a pre-0008 import: the path lives only in the description marker,
+  // sourcePath is NULL. reanalyze must still recover the path and refresh.
+  const [legacy] = await db
+    .insert(schema.workspaces)
+    .values({
+      title: "legacy-fixture",
+      type: "project",
+      description: `Imported from: ${path.resolve(projectDir)}`,
+      // sourcePath intentionally omitted → NULL, like rows created before 0008
+    })
+    .returning();
+  assert.equal(legacy.sourcePath, null, "legacy row has no sourcePath");
+
+  const res = await reanalyzeProject(legacy.id);
+  assert.ok(res.ok, res.ok ? "" : res.error);
+  if (res.ok) assert.ok(res.data.questionsCreated > 0, "legacy path re-analysed");
+
+  await deleteWorkspace(legacy.id);
 });
 
 // ── blended progress formula (REVIEW-008, #26) ───────────────────────────────
