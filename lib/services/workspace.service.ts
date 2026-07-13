@@ -21,6 +21,7 @@ export async function createWorkspace(
         description: input.description ?? null,
         type: input.type,
         goal: input.goal ?? null,
+        sourcePath: input.sourcePath ?? null,
       })
       .returning();
     return { ok: true, data: workspace };

@@ -10,6 +10,11 @@ export const workspaces = sqliteTable("workspaces", {
     enum: ["project", "dsa", "exam", "topic"],
   }).notNull(),
   goal: text("goal"),
+  // Absolute path this workspace was imported from (local dir or clone).
+  // Canonical replacement for the old load-bearing "Imported from: <path>"
+  // description marker — H4 dedup + reanalyzeProject read this directly.
+  // Null for manually-created (non-imported) workspaces.
+  sourcePath: text("source_path"),
   status: text("status", {
     enum: ["active", "paused", "completed", "archived"],
   })

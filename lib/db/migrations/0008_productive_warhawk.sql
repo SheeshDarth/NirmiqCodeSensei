@@ -1,0 +1,1 @@
+ALTER TABLE `workspaces` ADD `source_path` text;
