@@ -1,4 +1,11 @@
-import { Settings, Shield, Code2, ExternalLink, Sparkles } from "lucide-react";
+import {
+  Settings,
+  Shield,
+  Code2,
+  ExternalLink,
+  Sparkles,
+  Download,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -14,16 +21,27 @@ export default function SettingsPage() {
       {/* App settings */}
       <div className="bg-[#0d1117] border border-zinc-800 rounded-lg divide-y divide-zinc-800">
         {/* Storage */}
-        <div className="p-4 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-zinc-100">Storage Location</p>
             <p className="text-xs text-zinc-500 mt-0.5 font-mono">
               data/nirmiqcodesensei.db
             </p>
+            <p className="text-xs text-zinc-600 mt-1">
+              Restore: stop the app, replace this file with a backup, restart.
+            </p>
           </div>
-          <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded">
-            local SQLite
-          </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href="/settings/backup"
+              className="inline-flex items-center gap-1 text-xs text-cyan-500 hover:text-cyan-300 transition-colors"
+            >
+              <Download size={12} /> Backup
+            </a>
+            <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded">
+              local SQLite
+            </span>
+          </div>
         </div>
 
         {/* Export */}
