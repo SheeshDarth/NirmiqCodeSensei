@@ -569,5 +569,5 @@ Given 44 findings across two audits (many overlapping), what is the correct orde
 | REVIEW-008 | Whole-project review — polish sprint: GitHub-pull on refresh, blended progress formula (#26), conceptType form enum (#30); defer cohesion/search/graph | ✅ Implemented — 10/10 tests | Pre-1.0 |
 | REVIEW-009 | Landing strategy — preserve 15 commits (rebase-and-merge, no squash); skip paid AI smoke test; F2/F4/F5 cleanup as 3 free commits | ✅ Implemented — cleanup done | Pre-1.0 |
 | REVIEW-010 | CodeSensei program — visible-identity rename, 8-lens local senior-review engine (findings-only optional AI), Obsidian-grade graph | ✅ Implemented — 16/16 tests | v0.2 |
-| REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | 🔄 In progress (MS1✅ MS2✅ MS3✅) | v0.2→1.0 |
-| REVIEW-012 | MS3 cross-feature module links (#27/#28) — defer: no analyzer-produced module associations to populate an FK; revisit in MS4 as a soft `moduleId` column | ✅ Deferred (reasoned) | v0.2→1.0 |
+| REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | 🔄 In progress (MS1✅ MS2✅ MS3✅ MS4✅) | v0.2→1.0 |
+| REVIEW-012 | MS3 cross-feature module links (#27/#28) — deferred from MS3, then **built in MS4** as a soft `module_key` column with deterministic tagging on both AI + offline paths (no AI-schema dependency) | ✅ Implemented (MS4) | v0.2→1.0 |
