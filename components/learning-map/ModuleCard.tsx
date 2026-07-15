@@ -55,6 +55,7 @@ export default function ModuleCard({
           <button
             type="submit"
             title="Delete module"
+            aria-label={`Delete module: ${module.title}`}
             className="text-zinc-700 hover:text-red-400 transition-colors"
           >
             <Trash2 size={13} />

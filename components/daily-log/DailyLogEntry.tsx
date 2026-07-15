@@ -61,6 +61,7 @@ export function DailyLogEntry({ log, deleteAction }: Props) {
               type="submit"
               className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors"
               title="Delete"
+              aria-label="Delete daily log entry"
             >
               <Trash2 size={13} />
             </button>

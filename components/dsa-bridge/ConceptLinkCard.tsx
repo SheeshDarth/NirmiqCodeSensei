@@ -86,6 +86,7 @@ export function ConceptLinkCard({ link, deleteAction }: Props) {
               type="submit"
               className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors"
               title="Delete"
+              aria-label="Delete concept link"
             >
               <Trash2 size={13} />
             </button>

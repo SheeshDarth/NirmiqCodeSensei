@@ -102,6 +102,7 @@ export default function QuestionCard({
             <button
               type="submit"
               title="Delete question"
+              aria-label="Delete question"
               className="text-zinc-700 hover:text-red-400 transition-colors"
             >
               <Trash2 size={13} />
