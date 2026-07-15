@@ -33,6 +33,19 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-contained production server (.next/standalone/server.js) with only the
+  // traced runtime deps — the basis for MS7 distribution (`npx`, single-folder
+  // deploy). Native better-sqlite3 is traced via serverExternalPackages below.
+  output: "standalone",
+
+  // The Drizzle migration files are read from disk at runtime (instrumentation.ts
+  // runs the migrator on boot), so dependency tracing — which only follows
+  // imports — can't see them. Force them into the standalone bundle, or a
+  // distributed build boots against an unmigrated database.
+  outputFileTracingIncludes: {
+    "/**": ["./lib/db/migrations/**/*"],
+  },
+
   // better-sqlite3 is a native addon — it must be require()'d at runtime, not
   // bundled. Without this, Turbopack tries to bundle it into its render/
   // static-path worker processes, which crashes them (WorkerError) on the
