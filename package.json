@@ -58,7 +58,8 @@
     "sharp": "^0.34.0"
   },
   "overrides": {
-    "esbuild": "$esbuild"
+    "esbuild": "$esbuild",
+    "hono": ">=4.12.25"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
