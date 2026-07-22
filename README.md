@@ -4,6 +4,8 @@
 >
 > _Formerly NirmiqLearn OS._
 
+[![CI](https://github.com/SheeshDarth/NirmiqCodeSensei/actions/workflows/ci.yml/badge.svg)](https://github.com/SheeshDarth/NirmiqCodeSensei/actions/workflows/ci.yml) ![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue) ![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen) ![Local-first](https://img.shields.io/badge/local--first-127.0.0.1-8A2BE2) ![Telemetry: none](https://img.shields.io/badge/telemetry-none-success)
+
 A local-first learning OS that turns any project into deep understanding. Point it at a folder (or a GitHub URL) and it reads the real code and gives you a senior-engineer-grade breakdown — architecture, security, code health, the DSA hiding in your code, how it all fits together — plus an Obsidian-style map of the project and explain-back questions to prove you actually get it. **No cloud, no telemetry, 127.0.0.1 only** — your source never leaves your machine.
 
 ---
