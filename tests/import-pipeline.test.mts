@@ -27,13 +27,40 @@ const { db } = await import("@/lib/db/client");
 const { migrate } = await import("drizzle-orm/better-sqlite3/migrator");
 const schema = await import("@/lib/db/schema");
 const { eq } = await import("drizzle-orm");
-const { resolveProjectPath, analyzeProject, reanalyzeProject, IMPORTED_PROJECTS_DIR } =
+const { resolveProjectPath, normalizeGitHubUrl, analyzeProject, reanalyzeProject, IMPORTED_PROJECTS_DIR } =
   await import("@/lib/services/project-analyzer.service");
 const { analyzeCode } = await import("@/lib/services/code-analyzer.service");
 const { computeSeniorReview, computeCodeHealthScore } = await import("@/lib/services/senior-review.service");
 const { detectStack } = await import("@/lib/services/local-analyzer.service");
 const { deleteWorkspace } = await import("@/lib/services/workspace.service");
 const { createDebugLog } = await import("@/lib/services/debug-log.service");
+
+// ── GitHub URL normalization (fix: GitHub import "not working") ───────────────
+// The reported bug: a github.com URL with a trailing slash / /tree/<branch> / www.
+// failed the strict regex, fell through to "local path", and never cloned.
+test("normalizeGitHubUrl accepts the forms people paste, rejects non-github", () => {
+  const canon = "https://github.com/octocat/Hello-World";
+  for (const u of [
+    "https://github.com/octocat/Hello-World",
+    "https://github.com/octocat/Hello-World/",
+    "https://github.com/octocat/Hello-World.git",
+    "https://github.com/octocat/Hello-World/tree/master",
+    "https://www.github.com/octocat/Hello-World?tab=readme",
+    "git@github.com:octocat/Hello-World.git",
+  ]) {
+    assert.equal(normalizeGitHubUrl(u), canon, `should normalize: ${u}`);
+  }
+  for (const bad of ["https://gitlab.com/a/b", "https://evil.com/x", "C:\\Users\\me\\proj", "not a url"]) {
+    assert.equal(normalizeGitHubUrl(bad), null, `should reject: ${bad}`);
+  }
+});
+
+test("resolveProjectPath detects a trailing-slash GitHub URL as GitHub (the reported bug)", () => {
+  const r = resolveProjectPath("https://github.com/octocat/Hello-World/");
+  assert.equal(r.isGitHub, true);
+  assert.equal(r.githubUrl, "https://github.com/octocat/Hello-World");
+  assert.equal(r.repoName, "Hello-World");
+});
 
 // ── Fixture: a minimal Next.js-ish project on disk ───────────────────────────
 let projectDir: string;

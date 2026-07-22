@@ -64,8 +64,25 @@ const KEY_FILES = [
   "next.config.ts", "next.config.js", "vite.config.ts",
 ];
 
-// Validate GitHub URL — only HTTPS GitHub URLs allowed
+// Validate GitHub URL — only HTTPS github.com repo URLs allowed
 const GITHUB_URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?$/;
+
+// Recognise the GitHub URL forms people actually paste — trailing slash,
+// /tree/<branch>, /blob/..., ?query, #hash, www., optional .git, and the SSH
+// form — and reduce them to the canonical clone URL. Returns null for anything
+// that isn't a github.com repo URL. HTTPS-only, github.com-only: the security
+// constraint (no other hosts, no shell) is preserved.
+export function normalizeGitHubUrl(input: string): string | null {
+  const trimmed = input.trim();
+  const ssh = /^git@github\.com:([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(trimmed);
+  if (ssh) return `https://github.com/${ssh[1]}/${ssh[2]}`;
+  const https =
+    /^https?:\/\/(?:www\.)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i.exec(
+      trimmed
+    );
+  if (https) return `https://github.com/${https[1]}/${https[2]}`;
+  return null;
+}
 
 // Block OS system directories AND per-user credential stores, so an imported
 // project can never trick the analyzer into reading secrets or system files.
@@ -207,13 +224,15 @@ export function resolveProjectPath(input: string): {
   localPath: string;
   repoName: string;
   isGitHub: boolean;
+  githubUrl?: string;
 } {
   const trimmed = input.trim();
 
-  if (GITHUB_URL_RE.test(trimmed)) {
-    const repoName = trimmed.split("/").pop()!.replace(/\.git$/, "");
+  const githubUrl = normalizeGitHubUrl(trimmed);
+  if (githubUrl) {
+    const repoName = githubUrl.split("/").pop()!;
     const localPath = path.join(IMPORTED_PROJECTS_DIR, repoName);
-    return { localPath, repoName, isGitHub: true };
+    return { localPath, repoName, isGitHub: true, githubUrl };
   }
 
   // Local path
@@ -221,10 +240,26 @@ export function resolveProjectPath(input: string): {
   return { localPath: path.resolve(trimmed), repoName, isGitHub: false };
 }
 
-export function cloneOrPullRepo(githubUrl: string, destPath: string): void {
-  if (!GITHUB_URL_RE.test(githubUrl)) {
-    throw new Error("Invalid GitHub URL. Only https://github.com/... URLs are supported.");
+// Fail with an actionable message when git is missing (e.g. a published npx
+// install on a machine without git) instead of a cryptic ENOENT from execFile.
+function assertGitAvailable(): void {
+  try {
+    execFileSync("git", ["--version"], { stdio: "pipe", timeout: 10_000 });
+  } catch {
+    throw new Error(
+      "GitHub import needs git installed and on your PATH. Install git, or import a local folder path instead."
+    );
   }
+}
+
+export function cloneOrPullRepo(githubUrl: string, destPath: string): void {
+  const url = normalizeGitHubUrl(githubUrl);
+  if (!url) {
+    throw new Error(
+      "Invalid GitHub URL. Use a github.com repository URL, e.g. https://github.com/owner/repo."
+    );
+  }
+  assertGitAvailable();
 
   mkdirSync(path.dirname(destPath), { recursive: true });
 
@@ -238,7 +273,8 @@ export function cloneOrPullRepo(githubUrl: string, destPath: string): void {
     });
   } else {
     // "--" terminates option parsing so a crafted URL can't inject git flags.
-    execFileSync("git", ["clone", "--", githubUrl, destPath], {
+    // --depth 1: shallow clone — faster, and no full history to trace into a bundle.
+    execFileSync("git", ["clone", "--depth", "1", "--", url, destPath], {
       timeout: 120_000,
       stdio: "pipe",
     });

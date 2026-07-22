@@ -33,8 +33,8 @@ export async function importProjectAction(
     localPath = resolved.localPath;
     repoName = resolved.repoName;
 
-    if (resolved.isGitHub) {
-      cloneOrPullRepo(raw, localPath);
+    if (resolved.isGitHub && resolved.githubUrl) {
+      cloneOrPullRepo(resolved.githubUrl, localPath);
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
