@@ -22,7 +22,7 @@ NirmiqCodeSensei fixes this without slowing you down.
 
 - **Deep Review** — an eight-lens, senior-engineer report: security, testing/QA, code health (LOC + cyclomatic complexity), architecture (routes, import cycles, coupling), frontend, backend, dependencies, and feasibility — each graded A–F with file-and-line findings.
 - **Learning Map** — an Obsidian-style force graph of the architecture: hover to highlight a file's neighbourhood, search, filter by layer, focus a node, or view its local neighbourhood; files with security/complexity findings are badged.
-- **Code-grounded DSA** — the data structures & algorithms actually present in your code, each linked to the exact file, line, and a practice task.
+- **Code-grounded DSA** — the data structures & algorithms actually detected in your code, each pairing the core CS concept behind it with the exact file, line, and snippet where it shows up — plus a practice task.
 - **Explain-Back questions** — progressively harder questions that make you prove you understand what was built.
 
 It also **connects to your AI coding assistant** (Claude Code, Cursor, Windsurf) over MCP, so while you build your assistant can log debug sessions, add questions, and map concepts as you go.
@@ -157,7 +157,7 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 
 - **Deep Review** — eight-lens senior-engineer report (security, testing, code health, architecture, frontend, backend, dependencies, feasibility) computed locally from your real code, graded A–F with file:line findings.
 - **Learning Map** — Obsidian-style architecture graph with hover-highlight, search, layer filters, focus/local views, and 2D/3D — badged with the review's security & complexity findings.
-- **DSA Bridge** — the data structures & algorithms actually in your code, mapped to file, line, and a practice task.
+- **DSA Bridge** — the data structures & algorithms actually detected in your code, each teaching the *core CS concept* behind it and *how it shows up in your code* (file, line, snippet), with a practice task; generic stack concepts are kept in a separate section.
 - **Explain-Back** — questions that force you to prove you understand, not just that it runs.
 - **Workspaces** — one workspace per project; log everything in one place.
 - **Debug Lab** — structured debug logs so you stop making the same mistakes twice.
@@ -187,10 +187,10 @@ Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 (hand-rolled components) 
 
 ## Roadmap
 
-The road to a deployed 1.0 is tracked as focused megasprints in
+The road to 1.0 was built as focused megasprints in
 [docs/MEGASPRINT_ROADMAP.md](docs/MEGASPRINT_ROADMAP.md): identity ✅, security ✅,
-then architecture & data integrity, analysis depth, QA, framework/perf, and
-distribution (`npx nirmiqcodesensei` + versioned releases). Architecture
+architecture & data integrity ✅, analysis depth ✅, QA ✅, framework & performance ✅,
+and distribution ✅ (`npx nirmiqcodesensei` + versioned releases). Architecture
 decisions are logged in [docs/COUNCIL_REVIEW_LOG.md](docs/COUNCIL_REVIEW_LOG.md).
 
 ---
