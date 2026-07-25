@@ -1,0 +1,59 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please don't include secrets, API keys, or private source code.
+        For security vulnerabilities, see SECURITY.md instead — do not open a public issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `npx nirmiqcodesensei`
+        2. Import ...
+        3. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where does it happen?
+      options:
+        - Import / analysis
+        - Learning Map (graph)
+        - Deep Review
+        - DSA Bridge
+        - Explain-Back / Debug Lab / Daily Log
+        - MCP server
+        - CLI / install (npx)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS and Node version
+      placeholder: "Windows 11 / Node 20.11.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: Paste any terminal or browser-console output. It will be rendered as code.
+      render: shell
