@@ -605,6 +605,42 @@ This is a *deployment-model* judgement, not an admission of immaturity. The scal
 
 ---
 
+### REVIEW-015 — Intensive post-1.0 review (code review + 4-agent swarm + council)
+
+**Date:** 2026-07-22
+**Trigger:** A three-lens review (local code review, a 4-agent swarm — security / architecture / performance / test-coverage — and this council) ran against a codebase believed release-ready after REVIEW-014. It surfaced three HIGH defects and a hard release blocker that the earlier review missed.
+
+**Recommendation:**
+Ship v1.0.0. Every blocker is fixed, verified and pushed; the residue is quality-of-experience and test debt, not safety or correctness.
+
+**What the review found (all fixed):**
+- **HIGH — symlink/junction arbitrary file read.** `readKeyFiles`/`getFileTree` followed links; `code-analyzer`'s walk had the guard, these did not. A repo with a `src`/`lib` junction leaked an unrelated tree into the AI prompt — off-machine with an API key. Contradicted SECURITY.md's own SEC-008 guarantee. Fixed with `isInsideRoot()` (realpath containment) — `86faa6e`.
+- **HIGH — `Refresh analysis` destroyed the student's answers.** `userAnswer`/`score`/`confidence` live on the question row `clearAnalysisArtifacts` wiped; progress was never recomputed. Now snapshotted and re-attached (re-inserted when a question no longer regenerates) — `5ab31cd`.
+- **HIGH — path traversal.** `github.com/owner/..` → `repoName=".."` escaped the clone dir; `git pull` could run elsewhere. Reachable via MCP — `970c85c`.
+- **BLOCKER — distribution was dead.** A stray home-dir `package-lock.json` made Next nest the standalone output; `pack-standalone` hard-failed, killing `prepack` and `npx`. Pinned `outputFileTracingRoot`/`turbopack.root` — `f1acb5d`.
+- **Product bug found by writing tests:** Hash Map / Set detectors required `new Map(`, so idiomatic `new Map<K,V>()` never matched — the two most common structures went undetected in TS projects — `b6faa2b`.
+- Silent-failure and hygiene fixes: bare `catch {}` hiding the whole code-analysis phase, `deleteWorkspaceAction` redirecting on failure, raw-exception leakage, a client-graph tripwire re-export, dead `GITHUB_URL_RE` — `a22d5db`.
+
+**Risks:**
+- `pack-standalone.mjs`'s forbidden-content guard (the only thing stopping the live DB/`.env` reaching npm) is still untested — it was *observed* passing this session; verify the tarball once more before publishing.
+- Analysis is 2–3× over its documented budget (measured 4–6 s / 123 files vs "<2.5 s") from ~9–15 redundant full-AST walks. Slow, not wrong.
+- Symlink confinement now exists in two forms (dirent skip vs realpath containment); divergence is how the fixed hole appeared.
+
+**Simplest Implementation Path:** verify tarball → maintainer tags v1.0.0 → publish → post-publish `npx` smoke → open 1.0.1 issues for the items below.
+
+**What NOT to Build Yet:**
+- DB indexes generally (architecture + performance agents independently agreed they don't matter at `MAX_FILES=300`). The `session_logs (workspace_id, created_at)` index is the one future exception — **note the hazard:** no index is declared in `schema.ts`, so `db:generate` may emit a DROP for migration 0004's hand-written index. Declare that one first.
+- Splitting `senior-review.service.ts` / `code-analyzer.service.ts` — largest by line count but the most cohesive files in the repo.
+- `import "server-only"` — correct in principle but needs a new dependency; the actual tripwire (the re-export) is already removed.
+- Dropping the dead `explain_back_questions.learning_map_id` FK — a SQLite column drop rebuilds the table; not worth the risk for a LOW finding.
+
+**Decision:**
+> **Ship v1.0.0.** All blockers fixed, tested and pushed. Deferred to 1.0.1: single-pass AST refactor, a test for the publish guard, and the `session_logs` index (declare the existing index first).
+
+**Status:** ✅ Logged (2026-07-22). Gate green (lint/typecheck/build, tests 30/30). Tag + Release + `npm publish` remain the maintainer's outward-facing actions.
+
+---
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
@@ -622,4 +658,5 @@ This is a *deployment-model* judgement, not an admission of immaturity. The scal
 | REVIEW-011 | Road to deployed 1.0 — single-problem megasprints (MS1–MS7) + full deep rename to NirmiqCodeSensei; load-balancing recorded N/A | ✅ Complete (MS1–MS7 ✅; N/A recorded in REVIEW-013) | v0.2→1.0 |
 | REVIEW-012 | MS3 cross-feature module links (#27/#28) — deferred from MS3, then **built in MS4** as a soft `module_key` column with deterministic tagging on both AI + offline paths (no AI-schema dependency) | ✅ Implemented (MS4) | v0.2→1.0 |
 | REVIEW-013 | Scaling/load balancing/traffic handling — **N/A by design** for a single-user, loopback-bound, local-first tool; scaling here means per-machine analysis performance (measured in BENCHMARKS.md). Revisit only on a move to a hosted model, data tier first | ✅ Recorded (MS7) — build nothing | 1.0 |
+| REVIEW-015 | Intensive post-1.0 review (code review + 4-agent swarm + council) — found 3 HIGH defects (symlink file read into the AI prompt, refresh destroying student answers, clone-dir path traversal) + a dead distribution build; all fixed, tested, pushed. Deferred: single-pass AST refactor, publish-guard test, `session_logs` index | ✅ Implemented — tests 30/30 | 1.0 |
 | REVIEW-014 | Whole-project v1.0.0 release-readiness — gate green (24/24), security A/100, tarball-verified; the one `hono` high is transitive + unreachable (stdio). Ship after 3 pre-flight checks; build nothing new | ✅ Logged — go to tag/publish (maintainer) | 1.0 |
