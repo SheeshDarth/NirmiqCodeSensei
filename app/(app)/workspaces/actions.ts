@@ -43,9 +43,12 @@ export async function deleteWorkspaceAction(formData: FormData): Promise<void> {
   const id = getUUID(formData, "workspaceId");
   if (!id) return;
 
-  await deleteWorkspace(id);
+  const result = await deleteWorkspace(id);
 
   revalidatePath("/workspaces");
+  // Only navigate away when the delete actually happened — redirecting on
+  // failure reported success and hid a workspace that is still there.
+  if (!result.ok) return;
   redirect("/workspaces");
 }
 

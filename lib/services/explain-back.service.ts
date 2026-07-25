@@ -10,7 +10,6 @@ import type {
 import { parseExpectedPoints } from "@/lib/utils";
 
 export type Question = typeof explainBackQuestions.$inferSelect;
-export { parseExpectedPoints };
 
 export async function createQuestion(
   workspaceId: string,

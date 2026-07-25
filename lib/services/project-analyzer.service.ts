@@ -34,6 +34,7 @@ import {
 } from "@/lib/services/learning-map.service";
 import { detectStack, generateLocalAnalysisText } from "@/lib/services/local-analyzer.service";
 import { analyzeCode, computeSourceFingerprint } from "@/lib/services/code-analyzer.service";
+import { buildSearchIndex } from "@/lib/services/search.service";
 import {
   computeSeniorReview,
   enrichReviewWithAI,
@@ -96,9 +97,13 @@ const BLOCKED_PATH_PREFIXES = [
   "/etc", "/sys", "/proc", "/usr", "/bin", "/sbin", "/boot", "/dev", "/lib", "/root",
   "/System", "/Library", "/private/etc",
   "C:\\Windows", "C:\\Program Files", "C:\\Program Files (x86)", "C:\\ProgramData",
-  // Per-user credential / key stores (any OS)
+  // Per-user credential / key stores (any OS). A blocklist can never be
+  // exhaustive for a "point me at any folder" feature — the real containment is
+  // isInsideRoot() on every read — but these are the stores worth naming.
   path.join(HOME, ".ssh"), path.join(HOME, ".aws"), path.join(HOME, ".gnupg"),
   path.join(HOME, ".kube"), path.join(HOME, ".docker"), path.join(HOME, ".config", "gcloud"),
+  path.join(HOME, ".azure"), path.join(HOME, ".config", "gh"),
+  path.join(HOME, ".netrc"), path.join(HOME, ".npmrc"), path.join(HOME, ".git-credentials"),
 ].map((p) => path.normalize(p).toLowerCase());
 
 // Resolve symlinks first so a link pointing at a blocked dir can't slip through,
@@ -976,11 +981,15 @@ async function persistAnalysis(
 
     // BM25 search index — best-effort, never fail the import
     try {
-      const { buildSearchIndex } = await import("@/lib/services/search.service");
       await buildSearchIndex(workspaceId, code.chunks);
-    } catch { /* search is optional */ }
-  } catch {
-    /* code analysis is best-effort */
+    } catch (e) {
+      console.warn("[analyze] search index build failed:", e);
+    }
+  } catch (e) {
+    // Still best-effort — the learning map saves either way. But swallowing this
+    // silently hid a missing graph, Deep Review AND DSA bridge behind an import
+    // that looked completely normal.
+    console.warn("[analyze] code-analysis phase failed:", e);
   }
 
   // Auto-create Learning Map from analysis (+ the real architecture graph). When

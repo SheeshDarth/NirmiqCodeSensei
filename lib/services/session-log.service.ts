@@ -32,8 +32,8 @@ export async function createSessionLog(
       })
       .returning();
     return { ok: true, data: entry };
-  } catch (e) {
-    return { ok: false, error: String(e) };
+  } catch {
+    return { ok: false, error: "Failed to save session log.", code: "DB_ERROR" };
   }
 }
 
@@ -49,7 +49,7 @@ export async function getSessionLogsByWorkspaceId(
       .orderBy(desc(sessionLogs.createdAt))
       .limit(limit);
     return { ok: true, data: entries };
-  } catch (e) {
-    return { ok: false, error: String(e) };
+  } catch {
+    return { ok: false, error: "Failed to load session logs.", code: "DB_ERROR" };
   }
 }

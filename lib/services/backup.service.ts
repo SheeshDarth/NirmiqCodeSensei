@@ -35,8 +35,13 @@ export async function backupDatabase(): Promise<
       },
     };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `Backup failed: ${msg}`, code: "BACKUP_ERROR" };
+    // The raw message carries absolute DB/temp paths — log it, don't return it.
+    console.warn("[backup] snapshot failed:", e);
+    return {
+      ok: false,
+      error: "Backup failed. Check that the data directory is writable.",
+      code: "BACKUP_ERROR",
+    };
   } finally {
     try {
       unlinkSync(tmpPath);
