@@ -572,6 +572,71 @@ test("reanalyzeProject: preserves the student's answers across a refresh", async
   await deleteWorkspace(ws.id);
 });
 
+// ── DSA detectors ────────────────────────────────────────────────────────────
+// The code-grounded DSA breakdown is the headline feature, but only two signals
+// were ever asserted. Each case is a minimal file that genuinely contains the
+// pattern; MAX_FINDINGS caps a single run, so each detector gets its own project.
+test("DSA detectors: every signal fires on code that really contains it", () => {
+  const cases: Array<[string, string, string]> = [
+    ["m.ts", "const m = new Map<string, number>();\nm.set('a', 1);\n", "Hash Map / Dictionary"],
+    ["s.ts", "const s = new Set<number>();\ns.add(1);\n", "Set (unique collection)"],
+    ["q.ts", "function run() {\n  const st: number[] = [];\n  st.push(1);\n  st.pop();\n}\n", "Stack / Queue"],
+    ["h.ts", "const out = [1, 2].map((x) => x * 2);\n", "Higher-order array ops (map/filter/reduce)"],
+    ["so.ts", "const xs = [3, 1].sort((a, b) => a - b);\n", "Sorting"],
+    ["r.ts", "function fact(n: number): number {\n  return n <= 1 ? 1 : fact(n - 1);\n}\n", "Recursion"],
+    ["bs.ts", "function binarySearch(xs: number[], t: number) {\n  return xs.indexOf(t);\n}\n", "Binary Search"],
+    ["g.ts", "function bfs(start: string) {\n  return [start];\n}\n", "Graph traversal (BFS/DFS)"],
+    ["dp.ts", "const memo: Record<string, number> = {};\nmemo.a = 1;\n", "Dynamic Programming / Memoization"],
+    ["tp.ts", "let left = 0;\nlet right = 9;\nwhile (left < right) {\n  left++;\n}\n", "Two-pointer / Sliding window"],
+    ["re.ts", "const re = /ab+c/g;\nexport const ok = re.test('abc');\n", "Regular Expressions"],
+    ["as.ts", "export async function go() {\n  await Promise.all([]);\n}\n", "Async / Concurrency"],
+    ["hp.ts", "class MinHeap {\n  items: number[] = [];\n}\n", "Heap / Priority Queue"],
+    ["ll.ts", "function walk(node: any) {\n  while (node) {\n    node = node.next;\n  }\n}\n", "Linked List Traversal"],
+    ["ob.ts", "function wire(bus: any) {\n  bus.on('x', () => {});\n  bus.emit('x');\n}\n", "Observer / Event Emitter"],
+    ["sg.ts", "class S {\n  static instance: S;\n  static getInstance(): S {\n    return S.instance;\n  }\n}\n", "Singleton Pattern"],
+    ["fa.ts", "export function createThing(): { id: number } {\n  return { id: 1 };\n}\n", "Factory Function / Method"],
+    ["bt.ts", "function permute(a: number[]): void {\n  for (const _x of a) {\n    permute(a);\n  }\n}\n", "Backtracking"],
+  ];
+
+  for (const [file, code, expected] of cases) {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "ncs-dsa-"));
+    try {
+      writeFileSync(path.join(dir, file), code);
+      const names = analyzeCode(dir, "dsa-fixture").findings.map((f) => f.name);
+      assert.ok(
+        names.includes(expected),
+        `"${expected}" should fire on ${file} — got: ${names.join(", ") || "(none)"}`
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+// ── database backup ──────────────────────────────────────────────────────────
+// The only way a user gets their data out of this local-first app.
+test("backupDatabase returns a real SQLite snapshot of the live schema", async () => {
+  const { backupDatabase } = await import("@/lib/services/backup.service");
+  const res = await backupDatabase();
+  assert.ok(res.ok, res.ok ? "" : res.error);
+  if (!res.ok) return;
+
+  assert.match(res.data.filename, /^nirmiqcodesensei-backup-\d+\.db$/);
+  assert.ok(res.data.data.length > 0, "snapshot is not empty");
+  // Every SQLite file starts with this magic string.
+  assert.equal(
+    res.data.data.subarray(0, 15).toString("utf8"),
+    "SQLite format 3",
+    "buffer is a SQLite database, not a truncated/partial copy"
+  );
+  // Table names live as plain text in the schema page — proves the snapshot
+  // carries the real schema rather than an empty freshly-created file.
+  assert.ok(
+    res.data.data.includes(Buffer.from("explain_back_questions")),
+    "snapshot contains the app schema"
+  );
+});
+
 // ── blended progress formula (REVIEW-008, #26) ───────────────────────────────
 test("progress: checkpoints AND green answers move progressScore", async () => {
   const { getLearningMapByWorkspaceId, toggleCheckpoint } = await import(

@@ -272,7 +272,9 @@ const SIGNALS: Signal[] = [
   {
     name: "Hash Map / Dictionary",
     category: "Data Structure",
-    re: /new Map\(|: Record<|Object\.fromEntries|defaultdict|\bdict\(|new HashMap|map\[[^\]]+\][a-z]/i,
+    // `new Map<K, V>()` is the idiomatic TS form — matching only `new Map(`
+    // missed it in exactly the codebases this tool targets.
+    re: /new Map\s*[<(]|: Record<|Object\.fromEntries|defaultdict|\bdict\(|new HashMap|map\[[^\]]+\][a-z]/i,
     explanation: "A key→value store used here for O(1) average lookups instead of scanning a list.",
     dsaConnection: "Hash tables: hashing keys into buckets for constant-time access.",
     practiceTask: "Solve LeetCode #1 (Two Sum) using a hash map for O(n) time.",
@@ -280,7 +282,7 @@ const SIGNALS: Signal[] = [
   {
     name: "Set (unique collection)",
     category: "Data Structure",
-    re: /new Set\(|\bset\(\)|HashSet|\bnew HashSet/,
+    re: /new Set\s*[<(]|\bset\(\)|HashSet|\bnew HashSet/,
     explanation: "Stores unique values; membership checks are O(1) average.",
     dsaConnection: "Sets / hash sets — deduplication and fast membership testing.",
     practiceTask: "Solve LeetCode #217 (Contains Duplicate) with a set.",
