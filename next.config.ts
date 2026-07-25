@@ -38,6 +38,16 @@ const nextConfig: NextConfig = {
   // deploy). Native better-sqlite3 is traced via serverExternalPackages below.
   output: "standalone",
 
+  // Pin the workspace root. Next otherwise INFERS it by walking up for lockfiles,
+  // and any stray package-lock.json in a parent (e.g. C:\Users\<you>\) wins — the
+  // standalone build then lands at .next/standalone/<relative>/<path>/server.js
+  // instead of .next/standalone/server.js, so scripts/pack-standalone.mjs can't
+  // find the server and `npm run prepack` (the whole npx distribution) hard-fails.
+  // Turbopack infers the same root for dev, where a bad guess breaks the
+  // instrumentation hook. The Next CLI is always launched from the package root.
+  outputFileTracingRoot: process.cwd(),
+  turbopack: { root: process.cwd() },
+
   // The Drizzle migration files are read from disk at runtime (instrumentation.ts
   // runs the migrator on boot), so dependency tracing — which only follows
   // imports — can't see them. Force them into the standalone bundle, or a
