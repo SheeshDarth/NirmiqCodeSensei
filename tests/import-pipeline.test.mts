@@ -513,6 +513,65 @@ test("reanalyzeProject: legacy workspaces (null sourcePath) fall back to the des
   await deleteWorkspace(legacy.id);
 });
 
+// A refresh clears generated artifacts, but answers live ON the question row —
+// so the wipe used to take userAnswer/score/confidence with it. Uses its own
+// workspace so the shared one's progress assertions stay untouched.
+test("reanalyzeProject: preserves the student's answers across a refresh", async () => {
+  const [ws] = await db
+    .insert(schema.workspaces)
+    .values({
+      title: "answer-preservation-fixture",
+      type: "project",
+      sourcePath: path.resolve(projectDir),
+    })
+    .returning();
+
+  const first = await reanalyzeProject(ws.id);
+  assert.ok(first.ok, first.ok ? "" : first.error);
+
+  const [q] = await db
+    .select()
+    .from(schema.explainBackQuestions)
+    .where(eq(schema.explainBackQuestions.workspaceId, ws.id));
+  assert.ok(q, "questions were generated to answer");
+
+  await db
+    .update(schema.explainBackQuestions)
+    .set({
+      userAnswer: "The walker recurses over the tree, skipping symlinks.",
+      score: 80,
+      confidence: "green",
+    })
+    .where(eq(schema.explainBackQuestions.id, q.id));
+
+  // Change the tree so the refresh actually runs (MS4 short-circuits otherwise).
+  appendFileSync(
+    path.join(projectDir, "src", "index.ts"),
+    "\nexport const _touchAnswers = 2;\n"
+  );
+
+  const second = await reanalyzeProject(ws.id);
+  assert.ok(second.ok, second.ok ? "" : second.error);
+  if (second.ok) assert.ok(!second.data.unchanged, "changed tree forces a refresh");
+
+  const after = await db
+    .select()
+    .from(schema.explainBackQuestions)
+    .where(eq(schema.explainBackQuestions.workspaceId, ws.id));
+  const answered = after.filter((r) => r.userAnswer !== null);
+
+  assert.equal(answered.length, 1, "the answered question survived the refresh");
+  assert.equal(
+    answered[0].userAnswer,
+    "The walker recurses over the tree, skipping symlinks.",
+    "answer text preserved verbatim"
+  );
+  assert.equal(answered[0].score, 80, "score preserved");
+  assert.equal(answered[0].confidence, "green", "confidence preserved");
+
+  await deleteWorkspace(ws.id);
+});
+
 // ── blended progress formula (REVIEW-008, #26) ───────────────────────────────
 test("progress: checkpoints AND green answers move progressScore", async () => {
   const { getLearningMapByWorkspaceId, toggleCheckpoint } = await import(

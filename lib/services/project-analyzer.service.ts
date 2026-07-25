@@ -20,6 +20,7 @@ import {
   createWorkspace,
   listWorkspaces,
   getWorkspaceById,
+  recomputeWorkspaceProgress,
 } from "@/lib/services/workspace.service";
 import { createQuestion } from "@/lib/services/explain-back.service";
 import {
@@ -587,6 +588,10 @@ export async function reanalyzeProject(
   const computed = await computeAnalysis(resolvedPath, projectName, anthropicApiKey);
   if (!computed.ok) return computed;
 
+  // A refresh replaces auto-generated content. It must not destroy the answers
+  // the student wrote against the previous question set.
+  const priorAnswers = await snapshotAnsweredQuestions(workspaceId);
+
   await clearAnalysisArtifacts(workspaceId);
 
   const { questionsCreated, conceptsCreated } = await persistAnalysis(
@@ -597,6 +602,12 @@ export async function reanalyzeProject(
     computed.data.structured,
     anthropicApiKey
   );
+
+  await restoreAnsweredQuestions(workspaceId, priorAnswers);
+  // Progress is derived from answered questions + completed checkpoints, so
+  // without this the workspace keeps its pre-refresh percentage against a
+  // freshly generated question set.
+  await recomputeWorkspaceProgress(workspaceId);
 
   return {
     ok: true,
@@ -622,6 +633,67 @@ async function clearAnalysisArtifacts(workspaceId: string): Promise<void> {
   await db.delete(conceptLinks).where(eq(conceptLinks.workspaceId, workspaceId));
   await db.delete(searchChunks).where(eq(searchChunks.workspaceId, workspaceId));
   await db.delete(learningMaps).where(eq(learningMaps.workspaceId, workspaceId));
+}
+
+/**
+ * A student's answers are NOT analysis artifacts, but they live on the question
+ * row that clearAnalysisArtifacts drops — so a refresh would silently take
+ * userAnswer/score/confidence with it. That is the most valuable data in the
+ * workspace, so snapshot it before the wipe and re-attach it afterwards.
+ */
+type AnsweredQuestion = typeof explainBackQuestions.$inferSelect;
+
+async function snapshotAnsweredQuestions(
+  workspaceId: string
+): Promise<AnsweredQuestion[]> {
+  const rows = await db
+    .select()
+    .from(explainBackQuestions)
+    .where(eq(explainBackQuestions.workspaceId, workspaceId));
+  return rows.filter((q) => q.userAnswer !== null && q.userAnswer.trim() !== "");
+}
+
+// Match on normalised text: a re-run usually regenerates the same questions, but
+// whitespace or casing can drift between analyzer versions.
+const questionKey = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+async function restoreAnsweredQuestions(
+  workspaceId: string,
+  prior: AnsweredQuestion[]
+): Promise<void> {
+  if (prior.length === 0) return;
+  const fresh = await db
+    .select()
+    .from(explainBackQuestions)
+    .where(eq(explainBackQuestions.workspaceId, workspaceId));
+  const freshByKey = new Map(fresh.map((q) => [questionKey(q.question), q]));
+
+  for (const old of prior) {
+    const match = freshByKey.get(questionKey(old.question));
+    if (match) {
+      await db
+        .update(explainBackQuestions)
+        .set({
+          userAnswer: old.userAnswer,
+          score: old.score,
+          confidence: old.confidence,
+        })
+        .where(eq(explainBackQuestions.id, match.id));
+    } else {
+      // The refreshed analysis no longer asks this one. Keep the answered
+      // question rather than discarding work the student already did.
+      await db.insert(explainBackQuestions).values({
+        workspaceId,
+        question: old.question,
+        difficulty: old.difficulty,
+        moduleKey: old.moduleKey,
+        expectedPointsJson: old.expectedPointsJson,
+        userAnswer: old.userAnswer,
+        score: old.score,
+        confidence: old.confidence,
+      });
+    }
+  }
 }
 
 /**
