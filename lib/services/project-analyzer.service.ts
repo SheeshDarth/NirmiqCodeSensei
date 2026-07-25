@@ -64,8 +64,11 @@ const KEY_FILES = [
   "next.config.ts", "next.config.js", "vite.config.ts",
 ];
 
-// Validate GitHub URL — only HTTPS github.com repo URLs allowed
-const GITHUB_URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?$/;
+// The repo name becomes a directory under IMPORTED_PROJECTS_DIR, so a "." or
+// ".." segment would escape it (path.join(root, "..") is the *parent*), and a
+// stale clone there could then be `git pull`-ed. GitHub itself rejects these as
+// owner/repo names, so refusing them costs nothing and closes the traversal.
+const isSafeSegment = (s: string): boolean => s !== "." && s !== "..";
 
 // Recognise the GitHub URL forms people actually paste — trailing slash,
 // /tree/<branch>, /blob/..., ?query, #hash, www., optional .git, and the SSH
@@ -74,14 +77,15 @@ const GITHUB_URL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?$/;
 // constraint (no other hosts, no shell) is preserved.
 export function normalizeGitHubUrl(input: string): string | null {
   const trimmed = input.trim();
-  const ssh = /^git@github\.com:([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(trimmed);
-  if (ssh) return `https://github.com/${ssh[1]}/${ssh[2]}`;
-  const https =
+  const m =
+    /^git@github\.com:([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(trimmed) ??
     /^https?:\/\/(?:www\.)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i.exec(
       trimmed
     );
-  if (https) return `https://github.com/${https[1]}/${https[2]}`;
-  return null;
+  if (!m) return null;
+  const [, owner, repo] = m;
+  if (!isSafeSegment(owner) || !isSafeSegment(repo)) return null;
+  return `https://github.com/${owner}/${repo}`;
 }
 
 // Block OS system directories AND per-user credential stores, so an imported

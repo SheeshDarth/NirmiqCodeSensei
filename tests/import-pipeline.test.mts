@@ -55,6 +55,24 @@ test("normalizeGitHubUrl accepts the forms people paste, rejects non-github", ()
   }
 });
 
+// The repo name becomes a directory under IMPORTED_PROJECTS_DIR — a "." or ".."
+// segment would escape it, and cloneOrPullRepo would then `git pull` inside an
+// unintended directory. Reachable from the MCP tool, not just the UI.
+test("normalizeGitHubUrl refuses dot segments that would escape the clone dir", () => {
+  for (const bad of [
+    "https://github.com/owner/..",
+    "https://github.com/owner/.",
+    "https://github.com/owner/../../Windows",
+    "https://github.com/../repo",
+  ]) {
+    assert.equal(normalizeGitHubUrl(bad), null, `should refuse traversal: ${bad}`);
+  }
+  // A workspace resolved from such input must never be treated as a GitHub clone.
+  const r = resolveProjectPath("https://github.com/owner/..");
+  assert.equal(r.isGitHub, false);
+  assert.equal(r.githubUrl, undefined);
+});
+
 test("resolveProjectPath detects a trailing-slash GitHub URL as GitHub (the reported bug)", () => {
   const r = resolveProjectPath("https://github.com/octocat/Hello-World/");
   assert.equal(r.isGitHub, true);
