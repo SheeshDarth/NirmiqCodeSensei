@@ -166,17 +166,41 @@ type ParsedAnalysis = z.infer<typeof AnalysisSchema>;
 
 // ── File helpers ───────────────────────────────────────────────────────────────
 
-function getFileTree(dir: string, depth = 0, maxDepth = 3): string[] {
+/**
+ * True only when `candidate` resolves — through every symlink and Windows
+ * directory junction — to something inside `root`.
+ *
+ * code-analyzer's walk skips symlinked dirents, but the two prompt-building
+ * helpers below read paths directly, so without this a directory named `lib`
+ * that is really a junction to an unrelated project would be read and, when an
+ * API key is set, sent verbatim to the model. Junctions need no privilege to
+ * create on Windows, so a plain local-folder import is enough to trigger it.
+ * This restores the confinement SECURITY.md documents (SEC-008).
+ */
+function isInsideRoot(candidate: string, root: string): boolean {
+  try {
+    const realRoot = realpathSync(root);
+    const real = realpathSync(candidate);
+    return real === realRoot || real.startsWith(realRoot + path.sep);
+  } catch {
+    return false;
+  }
+}
+
+function getFileTree(dir: string, depth = 0, maxDepth = 3, root = dir): string[] {
   if (depth > maxDepth) return [];
   try {
     const entries = readdirSync(dir, { withFileTypes: true });
     const lines: string[] = [];
     for (const entry of entries) {
       if (IGNORE_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
+      if (entry.isSymbolicLink()) continue;
+      const full = path.join(dir, entry.name);
       const indent = "  ".repeat(depth);
       if (entry.isDirectory()) {
+        if (!isInsideRoot(full, root)) continue;
         lines.push(`${indent}${entry.name}/`);
-        lines.push(...getFileTree(path.join(dir, entry.name), depth + 1, maxDepth));
+        lines.push(...getFileTree(full, depth + 1, maxDepth, root));
       } else {
         lines.push(`${indent}${entry.name}`);
       }
@@ -193,6 +217,9 @@ function readKeyFiles(projectPath: string): string {
   for (const fileName of KEY_FILES) {
     const filePath = path.join(projectPath, fileName);
     if (!existsSync(filePath)) continue;
+    // A symlinked package.json/README could otherwise pull in a file from
+    // anywhere on disk — and this content goes straight into the AI prompt.
+    if (!isInsideRoot(filePath, projectPath)) continue;
     try {
       const content = readFileSync(filePath, "utf-8").slice(0, 3000);
       sections.push(`### ${fileName}\n\`\`\`\n${content}\n\`\`\``);
@@ -204,11 +231,15 @@ function readKeyFiles(projectPath: string): string {
   for (const srcDir of srcDirs) {
     const srcPath = path.join(projectPath, srcDir);
     if (!existsSync(srcPath)) continue;
+    // A `src`/`lib`/`app` directory that is really a symlink or Windows
+    // junction would hand us another project's source tree.
+    if (!isInsideRoot(srcPath, projectPath)) continue;
     try {
       const entries = readdirSync(srcPath, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isFile()) continue;
         if (!/\.(ts|tsx|js|jsx|py|go|rs|java|cs)$/.test(entry.name)) continue;
+        if (!isInsideRoot(path.join(srcPath, entry.name), projectPath)) continue;
         try {
           const content = readFileSync(
             path.join(srcPath, entry.name), "utf-8"
