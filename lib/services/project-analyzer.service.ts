@@ -33,7 +33,11 @@ import {
   MODULE_KEYS,
 } from "@/lib/services/learning-map.service";
 import { detectStack, generateLocalAnalysisText } from "@/lib/services/local-analyzer.service";
-import { analyzeCode, computeSourceFingerprint } from "@/lib/services/code-analyzer.service";
+import {
+  analyzeCode,
+  buildFeatureTraces,
+  computeSourceFingerprint,
+} from "@/lib/services/code-analyzer.service";
 import { buildSearchIndex } from "@/lib/services/search.service";
 import {
   computeSeniorReview,
@@ -899,6 +903,7 @@ async function persistAnalysis(
   // architecture/workflow graph. Best-effort — never fail the import over this.
   let graphJson: string | undefined;
   let seniorReviewJson: string | undefined;
+  let featureTracesJson: string | undefined;
   let analysisTruncated = false;
   let scannedFileCount = 0;
   try {
@@ -977,6 +982,13 @@ async function persistAnalysis(
 
     if (code.graph.nodes.length > 1) {
       graphJson = JSON.stringify(code.graph);
+
+      // Feature traces — end-to-end paths through the import graph.
+      // TODO(step 5): populate each hop's risks[] from the review's per-file
+      // severity map. That map (secByFile) is scoped to the badging block above,
+      // so wiring it here needs a small hoist — kept separate to avoid
+      // restructuring the review flow in the same change.
+      featureTracesJson = JSON.stringify(buildFeatureTraces(code));
     }
 
     // BM25 search index — best-effort, never fail the import
@@ -1008,6 +1020,7 @@ async function persistAnalysis(
     graphJson,
     seniorReviewJson,
     sourceFingerprint,
+    featureTracesJson,
   });
 
   return { questionsCreated, conceptsCreated };

@@ -119,6 +119,7 @@ export async function createLearningMapWithContent(
     graphJson?: string;
     seniorReviewJson?: string;
     sourceFingerprint?: string;
+    featureTracesJson?: string;
     modules: Array<{
       key?: string;
       title: string;
@@ -162,6 +163,7 @@ export async function createLearningMapWithContent(
         graphJson: content.graphJson ?? null,
         seniorReviewJson: content.seniorReviewJson ?? null,
         sourceFingerprint: content.sourceFingerprint ?? null,
+        featureTracesJson: content.featureTracesJson ?? null,
         modulesJson,
         checkpointsJson,
       })
