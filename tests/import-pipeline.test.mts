@@ -29,7 +29,7 @@ const schema = await import("@/lib/db/schema");
 const { eq } = await import("drizzle-orm");
 const { resolveProjectPath, normalizeGitHubUrl, analyzeProject, reanalyzeProject, IMPORTED_PROJECTS_DIR } =
   await import("@/lib/services/project-analyzer.service");
-const { analyzeCode } = await import("@/lib/services/code-analyzer.service");
+const { analyzeCode, buildFeatureTraces } = await import("@/lib/services/code-analyzer.service");
 const { computeSeniorReview, computeCodeHealthScore } = await import("@/lib/services/senior-review.service");
 const { detectStack } = await import("@/lib/services/local-analyzer.service");
 const { deleteWorkspace } = await import("@/lib/services/workspace.service");
@@ -570,6 +570,109 @@ test("reanalyzeProject: preserves the student's answers across a refresh", async
   assert.equal(answered[0].confidence, "green", "confidence preserved");
 
   await deleteWorkspace(ws.id);
+});
+
+// ── feature traces ───────────────────────────────────────────────────────────
+// buildFeatureTraces is pure over CodeAnalysis, so drive it with synthetic
+// inputs rather than a real walk — the graph shape is the thing under test.
+type Analysis = Parameters<typeof buildFeatureTraces>[0];
+
+function fakeAnalysis(
+  files: Array<[string, string]>,
+  importEdges: Array<[string, string]>,
+  findings: Array<{ name: string; file: string }> = []
+): Analysis {
+  return {
+    findings: findings.map((f) => ({
+      name: f.name, file: f.file, category: "Algorithm", line: 1, snippet: "x",
+      explanation: "", dsaConnection: "", practiceTask: "", confidence: "regex",
+    })),
+    chunks: [],
+    graph: { nodes: [], links: [] },
+    fileCount: files.length,
+    truncated: false,
+    corpus: files.map(([rel, content]) => ({
+      rel, layer: "", loc: content.split("\n").length, bytes: content.length,
+      content, isTsJs: true, isClientComponent: false,
+    })),
+    importEdges,
+  } as unknown as Analysis;
+}
+
+const ROUTE = "app/(app)/workspaces/page.tsx";
+const SERVICE = "lib/services/workspace.service.ts";
+const SCHEMA = "lib/db/schema.ts";
+
+test("buildFeatureTraces: walks an entry point down to the data layer", () => {
+  const traces = buildFeatureTraces(
+    fakeAnalysis(
+      [
+        [ROUTE, "export default function Page() {}\n"],
+        [SERVICE, "export async function deleteWorkspace() {}\n"],
+        [SCHEMA, "export const workspaces = 1;\n"],
+      ],
+      [
+        [ROUTE, SERVICE],
+        [SERVICE, SCHEMA],
+      ]
+    )
+  );
+
+  assert.equal(traces.length, 1, "one entry point yields one trace");
+  const [t] = traces;
+  assert.equal(t.entry, ROUTE);
+  assert.equal(t.terminal, SCHEMA, "trace ends at the data layer");
+  assert.deepEqual(
+    t.hops.map((h) => h.file),
+    [ROUTE, SERVICE, SCHEMA],
+    "hops follow the real import path"
+  );
+  assert.deepEqual(
+    t.hops.map((h) => h.layer),
+    ["Routes & Pages", "Services / Logic", "Data Layer"],
+    "hops advance through the workflow layers"
+  );
+  assert.equal(t.hops[1].symbol, "deleteWorkspace", "captures the symbol crossed");
+});
+
+test("buildFeatureTraces: a cyclic import graph terminates", () => {
+  // service imports the route back — the walk must not loop forever.
+  const traces = buildFeatureTraces(
+    fakeAnalysis(
+      [
+        [ROUTE, "export default function Page() {}\n"],
+        [SERVICE, "export const svc = 1;\n"],
+      ],
+      [
+        [ROUTE, SERVICE],
+        [SERVICE, ROUTE],
+      ]
+    )
+  );
+  assert.equal(traces.length, 1);
+  assert.deepEqual(traces[0].hops.map((h) => h.file), [ROUTE, SERVICE]);
+});
+
+test("buildFeatureTraces: concepts detected in a file appear on its hop", () => {
+  const [t] = buildFeatureTraces(
+    fakeAnalysis(
+      [
+        [ROUTE, "export default function Page() {}\n"],
+        [SERVICE, "export const svc = 1;\n"],
+      ],
+      [[ROUTE, SERVICE]],
+      [{ name: "Recursion", file: SERVICE }]
+    )
+  );
+  assert.deepEqual(t.hops[1].concepts, ["Recursion"], "DSA lands on the path");
+  assert.deepEqual(t.hops[0].concepts, [], "and only where it was detected");
+});
+
+test("buildFeatureTraces: a lone file is not a trace", () => {
+  const traces = buildFeatureTraces(
+    fakeAnalysis([[ROUTE, "export default function Page() {}\n"]], [])
+  );
+  assert.equal(traces.length, 0, "a single node is a file, not a path");
 });
 
 // ── DSA detectors ────────────────────────────────────────────────────────────

@@ -1001,6 +1001,132 @@ function computePageRank(
   return scores;
 }
 
+// ── Feature traces ───────────────────────────────────────────────────────────
+/**
+ * One end-to-end path through the codebase: entry point → … → data layer.
+ *
+ * The graph answers "what imports what"; a trace answers "what actually happens
+ * when a user clicks this", which is where architecture, DSA and system design
+ * stop being separate views. `risks` is filled in later from the stored senior
+ * review — this function stays pure over CodeAnalysis.
+ */
+export interface FeatureTraceHop {
+  file: string;
+  layer: string;
+  symbol?: string;
+  line?: number;
+  concepts: string[];
+  risks: string[];
+}
+
+export interface FeatureTrace {
+  id: string;
+  title: string;
+  entry: string;
+  hops: FeatureTraceHop[];
+  terminal: string;
+}
+
+const TRACE_ENTRY_LAYERS = new Set(["Routes & Pages", "API Endpoints"]);
+const MAX_TRACE_HOPS = 6;
+const MAX_TRACES = 8;
+
+// "app/(app)/workspaces/[id]/export/route.ts" → "Workspaces / export"
+function traceTitle(rel: string): string {
+  const parts = rel
+    .split("/")
+    .filter((p) => p && !/^(app|src|pages)$/.test(p) && !/^\(.*\)$/.test(p));
+  const base = parts.pop() ?? rel;
+  const isGeneric = /^(page|route|layout|actions)\.(tsx?|jsx?)$/.test(base);
+  const words = (isGeneric ? parts : [...parts, base.replace(/\.\w+$/, "")])
+    .filter((p) => !/^\[.*\]$/.test(p))
+    .map((p) => p.replace(/[-_]/g, " "));
+  const label = words.join(" / ") || rel;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// First exported symbol in the file — the thing the caller most likely crossed.
+const EXPORT_RE = /export\s+(?:async\s+)?(?:function|const|class)\s+([A-Za-z_$][\w$]*)/;
+
+function exportedSymbol(content: string): { symbol?: string; line?: number } {
+  const m = EXPORT_RE.exec(content);
+  if (!m) return {};
+  return { symbol: m[1], line: content.slice(0, m.index).split("\n").length };
+}
+
+export function buildFeatureTraces(analysis: CodeAnalysis): FeatureTrace[] {
+  const files = analysis.corpus.map((f) => f.rel);
+  if (files.length === 0) return [];
+
+  const contentByFile = new Map(analysis.corpus.map((f) => [f.rel, f.content]));
+  const layerByFile = new Map(files.map((f) => [f, layerOf(f)]));
+  const rank = (f: string) => WORKFLOW_ORDER.indexOf(layerByFile.get(f) ?? "Other");
+
+  const adj = new Map<string, string[]>();
+  for (const [from, to] of analysis.importEdges) {
+    if (from === to) continue;
+    const list = adj.get(from);
+    if (list) {
+      if (!list.includes(to)) list.push(to);
+    } else {
+      adj.set(from, [to]);
+    }
+  }
+
+  const pageRank = computePageRank(files, analysis.importEdges);
+  const pr = (f: string) => pageRank.get(f) ?? 0;
+
+  const conceptsByFile = new Map<string, string[]>();
+  for (const f of analysis.findings) {
+    const list = conceptsByFile.get(f.file) ?? [];
+    if (!list.includes(f.name)) list.push(f.name);
+    conceptsByFile.set(f.file, list);
+  }
+
+  const hopFor = (file: string): FeatureTraceHop => ({
+    file,
+    layer: layerByFile.get(file) ?? "Other",
+    ...exportedSymbol(contentByFile.get(file) ?? ""),
+    concepts: conceptsByFile.get(file) ?? [],
+    risks: [],
+  });
+
+  const traces: FeatureTrace[] = [];
+  for (const entry of files) {
+    if (!TRACE_ENTRY_LAYERS.has(layerByFile.get(entry) ?? "")) continue;
+
+    // Walk toward the data layer. `seen` guards cycles, and a strictly
+    // increasing workflow rank guarantees termination even on a dense graph.
+    const seen = new Set<string>([entry]);
+    const hops: FeatureTraceHop[] = [hopFor(entry)];
+    let current = entry;
+
+    while (hops.length < MAX_TRACE_HOPS) {
+      const next = (adj.get(current) ?? [])
+        .filter((n) => !seen.has(n) && rank(n) > rank(current))
+        .sort((a, b) => rank(b) - rank(a) || pr(b) - pr(a) || a.localeCompare(b))[0];
+      if (!next) break;
+      seen.add(next);
+      hops.push(hopFor(next));
+      current = next;
+    }
+
+    // A single node is a file, not a path.
+    if (hops.length < 2) continue;
+    traces.push({
+      id: entry.replace(/[^a-z0-9]+/gi, "-").toLowerCase(),
+      title: traceTitle(entry),
+      entry,
+      hops,
+      terminal: current,
+    });
+  }
+
+  return traces
+    .sort((a, b) => pr(b.terminal) - pr(a.terminal) || a.entry.localeCompare(b.entry))
+    .slice(0, MAX_TRACES);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 export function analyzeCode(projectPath: string, projectTitle: string): CodeAnalysis {
   const root = path.resolve(projectPath);
