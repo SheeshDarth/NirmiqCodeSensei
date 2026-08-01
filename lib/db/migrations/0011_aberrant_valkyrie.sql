@@ -1,0 +1,1 @@
+ALTER TABLE `learning_maps` ADD `feature_traces_json` text;

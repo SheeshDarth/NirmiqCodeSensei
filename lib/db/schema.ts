@@ -45,6 +45,10 @@ export const learningMaps = sqliteTable("learning_maps", {
   graphJson: text("graph_json"),
   // Senior Review — multi-lens local static analysis (SeniorReview JSON)
   seniorReviewJson: text("senior_review_json"),
+  // Feature traces — end-to-end paths (entry point → … → data layer) built from
+  // the import graph, each hop carrying its layer, symbol, concepts and risks.
+  // JSON array of FeatureTrace. Null for manual maps and pre-0011 analyses.
+  featureTracesJson: text("feature_traces_json"),
   // Source-tree fingerprint (sha256 of path|size|mtime over scanned files) from
   // the analysis run that produced this map. Lets reanalyze skip work when the
   // source is unchanged (MS4 incremental re-analysis). Null for manual maps.
