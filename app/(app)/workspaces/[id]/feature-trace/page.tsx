@@ -113,15 +113,20 @@ export default async function FeatureTracePage({
                         </p>
                       )}
 
+                      {/* Concepts and risks are the same findings the DSA Bridge
+                          and Deep Review show — link out so the surfaces are one
+                          system rather than four parallel views. */}
                       {hop.concepts.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                           {hop.concepts.map((c) => (
-                            <span
+                            <Link
                               key={c}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300"
+                              href={`/workspaces/${id}/dsa-bridge`}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-colors"
+                              title={`See "${c}" in the DSA Bridge`}
                             >
                               {c}
-                            </span>
+                            </Link>
                           ))}
                         </div>
                       )}
@@ -129,13 +134,15 @@ export default async function FeatureTracePage({
                       {hop.risks.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                           {hop.risks.map((r) => (
-                            <span
+                            <Link
                               key={r}
-                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-300"
+                              href={`/workspaces/${id}/deep-review`}
+                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+                              title="Open the Deep Review"
                             >
                               <AlertTriangle size={9} />
                               {r}
-                            </span>
+                            </Link>
                           ))}
                         </div>
                       )}
@@ -144,12 +151,18 @@ export default async function FeatureTracePage({
                 ))}
               </ol>
 
-              <div className="px-4 py-2.5 border-t border-zinc-800 bg-black/20">
-                <p className="text-xs text-zinc-500">
+              <div className="px-4 py-2.5 border-t border-zinc-800 bg-black/20 flex items-center gap-3 flex-wrap">
+                <p className="text-xs text-zinc-500 flex-1 min-w-0">
                   Ends at{" "}
                   <span className="font-mono text-zinc-400">{trace.terminal}</span> — if this
                   path breaks, everything above it stops working.
                 </p>
+                <Link
+                  href={`/workspaces/${id}/learning-map`}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 font-medium shrink-0 transition-colors"
+                >
+                  See it in the graph →
+                </Link>
               </div>
             </div>
           ))}

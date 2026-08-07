@@ -937,6 +937,12 @@ async function persistAnalysis(
       graph: code.graph,
       stack: detectStack(resolvedPath, projectName),
     });
+    // Hoisted out of the badging block below so feature traces can annotate each
+    // hop with the risk that actually sits on it — same maps, two consumers.
+    const SEVERITY_RANK = { critical: 3, high: 2, medium: 1 } as const;
+    const secByFile = new Map<string, "critical" | "high" | "medium">();
+    const complexFiles = new Set<string>();
+
     if (review.ok) {
       review.data.truncated = code.truncated;
       if (anthropicApiKey) {
@@ -951,8 +957,6 @@ async function persistAnalysis(
 
       // Badge the graph's file nodes with review findings BEFORE the graph is
       // serialized: security ring (worst severity per file) + complexity ring.
-      const SEVERITY_RANK = { critical: 3, high: 2, medium: 1 } as const;
-      const secByFile = new Map<string, "critical" | "high" | "medium">();
       for (const f of review.data.security.findings) {
         if (!f.file || !(f.severity in SEVERITY_RANK)) continue;
         const sev = f.severity as keyof typeof SEVERITY_RANK;
@@ -961,11 +965,9 @@ async function persistAnalysis(
           secByFile.set(f.file, sev);
         }
       }
-      const complexFiles = new Set(
-        review.data.codeHealth.complexFunctions
-          .filter((c) => c.complexity > 10)
-          .map((c) => c.file)
-      );
+      for (const c of review.data.codeHealth.complexFunctions) {
+        if (c.complexity > 10) complexFiles.add(c.file);
+      }
       for (const n of code.graph.nodes) {
         if (n.type !== "file") continue;
         const rel = n.id.slice("file:".length);
@@ -983,12 +985,18 @@ async function persistAnalysis(
     if (code.graph.nodes.length > 1) {
       graphJson = JSON.stringify(code.graph);
 
-      // Feature traces — end-to-end paths through the import graph.
-      // TODO(step 5): populate each hop's risks[] from the review's per-file
-      // severity map. That map (secByFile) is scoped to the badging block above,
-      // so wiring it here needs a small hoist — kept separate to avoid
-      // restructuring the review flow in the same change.
-      featureTracesJson = JSON.stringify(buildFeatureTraces(code));
+      // Feature traces — end-to-end paths through the import graph, each hop
+      // carrying the review findings for that file. This is what turns a flat
+      // A–F report into "this risk sits on the path your Delete button takes".
+      const traces = buildFeatureTraces(code);
+      for (const trace of traces) {
+        for (const hop of trace.hops) {
+          const severity = secByFile.get(hop.file);
+          if (severity) hop.risks.push(`security: ${severity}`);
+          if (complexFiles.has(hop.file)) hop.risks.push("high complexity");
+        }
+      }
+      featureTracesJson = JSON.stringify(traces);
     }
 
     // BM25 search index — best-effort, never fail the import
