@@ -15,6 +15,7 @@ import {
   Download,
   Activity,
   Shield,
+  Route,
 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
@@ -232,6 +233,24 @@ export default async function WorkspaceDetailPage({
             frontend, backend, dependencies, feasibility.
           </p>
           <span className="text-xs text-red-400 font-medium">Open →</span>
+        </Link>
+
+        {/* Feature Trace — end-to-end path through the code */}
+        <Link
+          href={`/workspaces/${ws.id}/feature-trace`}
+          className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Route size={15} className="text-cyan-400" />
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
+              Feature Trace
+            </h2>
+          </div>
+          <p className="text-xs text-zinc-500 mb-3">
+            A user clicks something — follow what actually runs, from the entry point down to
+            the database.
+          </p>
+          <span className="text-xs text-cyan-400 font-medium">Open →</span>
         </Link>
 
         {/* Session Log — vibe coding companion */}

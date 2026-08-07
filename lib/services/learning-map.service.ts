@@ -2,7 +2,11 @@ import { db } from "@/lib/db/client";
 import { learningMaps } from "@/lib/db/schema";
 import { recomputeWorkspaceProgress } from "@/lib/services/workspace.service";
 import { eq, desc } from "drizzle-orm";
+import * as z from "zod/v4";
 import type { ServiceResult } from "@/lib/types";
+// Type-only: erased at compile time, so this adds no runtime edge to the
+// analyzer (which owns the shape) and creates no import cycle.
+import type { FeatureTrace } from "@/lib/services/code-analyzer.service";
 import type {
   CreateLearningMapInput,
   AddModuleInput,
@@ -209,6 +213,49 @@ export async function getLearningMapByWorkspaceId(
     return {
       ok: false,
       error: "Failed to fetch learning map",
+      code: "DB_ERROR",
+    };
+  }
+}
+
+// Stored traces are validated on read: a map written by an older build (or a
+// hand-edited row) must degrade to "no traces" rather than crash the page.
+const featureTraceSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  entry: z.string(),
+  terminal: z.string(),
+  hops: z.array(
+    z.object({
+      file: z.string(),
+      layer: z.string(),
+      symbol: z.string().optional(),
+      line: z.number().optional(),
+      concepts: z.array(z.string()),
+      risks: z.array(z.string()),
+    })
+  ),
+});
+
+export async function getFeatureTracesByWorkspaceId(
+  workspaceId: string
+): Promise<ServiceResult<FeatureTrace[]>> {
+  try {
+    const [raw] = await db
+      .select()
+      .from(learningMaps)
+      .where(eq(learningMaps.workspaceId, workspaceId))
+      .limit(1);
+    // Null for manual maps and every pre-0011 analysis — not an error.
+    if (!raw?.featureTracesJson) return { ok: true, data: [] };
+    const parsed = z
+      .array(featureTraceSchema)
+      .safeParse(JSON.parse(raw.featureTracesJson));
+    return { ok: true, data: parsed.success ? parsed.data : [] };
+  } catch {
+    return {
+      ok: false,
+      error: "Failed to fetch feature traces",
       code: "DB_ERROR",
     };
   }

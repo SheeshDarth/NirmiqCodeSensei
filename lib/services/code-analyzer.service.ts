@@ -1045,13 +1045,32 @@ function traceTitle(rel: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-// First exported symbol in the file — the thing the caller most likely crossed.
-const EXPORT_RE = /export\s+(?:async\s+)?(?:function|const|class)\s+([A-Za-z_$][\w$]*)/;
+// The symbol a caller most likely crossed. Next route files start with config
+// exports (`export const dynamic = "force-dynamic"`), so naively taking the
+// first export labelled every page hop "dynamic" — useless. Skip the framework
+// config names and prefer a real function, including `export default function`.
+const EXPORT_RE =
+  /export\s+(?:default\s+)?(?:async\s+)?(?:function|const|class)\s+([A-Za-z_$][\w$]*)/g;
+
+const ROUTE_CONFIG_EXPORTS = new Set([
+  "dynamic", "revalidate", "runtime", "metadata", "fetchCache",
+  "preferredRegion", "maxDuration", "dynamicParams", "alt", "size", "contentType",
+]);
 
 function exportedSymbol(content: string): { symbol?: string; line?: number } {
-  const m = EXPORT_RE.exec(content);
-  if (!m) return {};
-  return { symbol: m[1], line: content.slice(0, m.index).split("\n").length };
+  EXPORT_RE.lastIndex = 0;
+  let fallback: { symbol: string; line: number } | undefined;
+  let m: RegExpExecArray | null;
+  while ((m = EXPORT_RE.exec(content)) !== null) {
+    const name = m[1];
+    if (ROUTE_CONFIG_EXPORTS.has(name)) continue;
+    const hit = { symbol: name, line: content.slice(0, m.index).split("\n").length };
+    // A function is what actually runs; keep the first non-config export only as
+    // a fallback in case the file exports nothing callable.
+    if (/function|class/.test(m[0])) return hit;
+    fallback ??= hit;
+  }
+  return fallback ?? {};
 }
 
 export function buildFeatureTraces(analysis: CodeAnalysis): FeatureTrace[] {
@@ -1102,9 +1121,12 @@ export function buildFeatureTraces(analysis: CodeAnalysis): FeatureTrace[] {
     let current = entry;
 
     while (hops.length < MAX_TRACE_HOPS) {
+      // Nearest next layer, not the furthest: sorting descending jumped a route
+      // straight to Services and skipped Server Actions entirely, so the real
+      // route → action → service → data path was never shown.
       const next = (adj.get(current) ?? [])
         .filter((n) => !seen.has(n) && rank(n) > rank(current))
-        .sort((a, b) => rank(b) - rank(a) || pr(b) - pr(a) || a.localeCompare(b))[0];
+        .sort((a, b) => rank(a) - rank(b) || pr(b) - pr(a) || a.localeCompare(b))[0];
       if (!next) break;
       seen.add(next);
       hops.push(hopFor(next));
