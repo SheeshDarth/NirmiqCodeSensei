@@ -28,6 +28,7 @@
     "dev": "next dev --turbopack --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
+    "app": "next build && next start --hostname 127.0.0.1",
     "pack:standalone": "node scripts/pack-standalone.mjs",
     "build:mcp": "esbuild mcp-server/index.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/mcp-server.cjs --external:better-sqlite3 --tsconfig=tsconfig.json",
     "prepack": "npm run build && npm run pack:standalone && npm run build:mcp",
