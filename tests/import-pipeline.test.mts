@@ -191,6 +191,40 @@ test("analyzeCode: detects real signals, builds graph, not truncated", () => {
   assert.ok(code.chunks.length >= 2, "emits a search chunk per file");
 });
 
+// Perf guard for the single-pass AST walk (Part C). Before the refactor the 5
+// "pure" detectors each ran their own full walkAst; merging them cut a ~123-file
+// analysis from ~3.9s to ~0.8s. This asserts a 60-file synthetic corpus stays
+// under the documented <2.5s budget — a coarse guard against regressing to the
+// per-detector-walk shape. Ceiling is generous so it catches gross regression,
+// not CI jitter.
+test("analyzeCode: single-pass AST walk stays under budget on 60 files", () => {
+  const perfDir = mkdtempSync(path.join(os.tmpdir(), "nirmiq-perf-"));
+  try {
+    // Each file exercises several detectors so every walk has real work to do.
+    const body = [
+      'import { Heap } from "./heap";',
+      "class DataHeap { constructor() {} }",
+      "function makeThing(): number { return 1; }",
+      "function walk(n: number): number { for (let i = 0; i < n; i++) { walk(i); } return n; }",
+      "function loop(a: number[]) { const s: number[] = []; s.push(1); s.pop(); let c = a.next; while (c) { c = c.next; } }",
+      "const e = { on() {}, emit() {} }; e.on(); e.emit();",
+    ].join("\n");
+    for (let i = 0; i < 60; i++) {
+      writeFileSync(path.join(perfDir, `mod${i}.ts`), body);
+    }
+    const t0 = performance.now();
+    const code = analyzeCode(perfDir, "perf-fixture");
+    const elapsed = performance.now() - t0;
+    assert.ok(code.fileCount >= 60, "analyzed the corpus");
+    assert.ok(
+      elapsed < 2500,
+      `60-file analysis took ${elapsed.toFixed(0)}ms, expected < 2500ms (single-pass budget)`
+    );
+  } finally {
+    rmSync(perfDir, { recursive: true, force: true });
+  }
+});
+
 // ── computeSeniorReview (direct, no DB) ──────────────────────────────────────
 test("computeSeniorReview: security lens flags the fake key with masked snippet", () => {
   const code = analyzeCode(projectDir, "fixture-app");

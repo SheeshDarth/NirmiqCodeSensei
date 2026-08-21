@@ -654,46 +654,61 @@ function detectStackQueue(ast: TSESTree.Program, lines: string[]): AstHit | null
   return found;
 }
 
-// Class name, new expression, or import specifier matching /heap|priorityqueue/i
-function detectHeap(ast: TSESTree.Program, lines: string[]): AstHit | null {
-  const HEAP_RE = /heap|priorityqueue/i;
-  let found: AstHit | null = null;
+// Single-pass detection of the 5 "pure" signals — heap, linked list, observer,
+// singleton, factory — that each used to run their own full walkAst. Merged into
+// one traversal (9 top-level walks → fewer) without changing behaviour: every
+// per-node predicate is the original detector's, each keeps an independent
+// found-slot, and walkAst is deterministic so first-match order is unchanged.
+// The 3 nested-re-walk detectors (recursion / stack-queue / backtracking) are
+// deliberately left alone — see the Part C plan.
+interface PureSignals {
+  heap: AstHit | null;
+  linkedList: AstHit | null;
+  observer: AstHit | null;
+  singleton: AstHit | null;
+  factory: AstHit | null;
+}
 
-  walkAst(ast, (node) => {
-    if (found) return;
-    if (node.type === "ClassDeclaration") {
-      const cls = node as TSESTree.ClassDeclaration;
-      if (cls.id?.name && HEAP_RE.test(cls.id.name)) found = nodeHit(node, lines);
-    }
-    if (node.type === "NewExpression" && node.callee.type === "Identifier") {
-      if (HEAP_RE.test((node.callee as TSESTree.Identifier).name)) found = nodeHit(node, lines);
-    }
-    if (node.type === "ImportDeclaration") {
-      const imp = node as TSESTree.ImportDeclaration;
-      for (const spec of imp.specifiers) {
-        if (found) break;
-        if (spec.type === "ImportSpecifier") {
-          const s = spec as TSESTree.ImportSpecifier;
-          const importedName =
-            s.imported.type === "Identifier"
-              ? (s.imported as TSESTree.Identifier).name
-              : "";
-          if (HEAP_RE.test(importedName)) found = nodeHit(node, lines);
+function detectPureSignals(ast: TSESTree.Program, lines: string[]): PureSignals {
+  const HEAP_RE = /heap|priorityqueue/i;
+  const FACTORY_RE = /^(create|build|make|produce)/i;
+
+  let heap: AstHit | null = null;
+  let linkedList: AstHit | null = null;
+  let singleton: AstHit | null = null;
+  let factory: AstHit | null = null;
+  // Observer accumulates and decides after the walk.
+  let hasSubscribe = false;
+  let hasPublish = false;
+  let observerFirstHit: AstHit | null = null;
+
+  walkAst(ast, (node, ancestors) => {
+    // ── heap ──
+    if (!heap) {
+      if (node.type === "ClassDeclaration") {
+        const cls = node as TSESTree.ClassDeclaration;
+        if (cls.id?.name && HEAP_RE.test(cls.id.name)) heap = nodeHit(node, lines);
+      }
+      if (!heap && node.type === "NewExpression" && node.callee.type === "Identifier") {
+        if (HEAP_RE.test((node.callee as TSESTree.Identifier).name)) heap = nodeHit(node, lines);
+      }
+      if (!heap && node.type === "ImportDeclaration") {
+        const imp = node as TSESTree.ImportDeclaration;
+        for (const spec of imp.specifiers) {
+          if (heap) break;
+          if (spec.type === "ImportSpecifier") {
+            const s = spec as TSESTree.ImportSpecifier;
+            const importedName =
+              s.imported.type === "Identifier" ? (s.imported as TSESTree.Identifier).name : "";
+            if (HEAP_RE.test(importedName)) heap = nodeHit(node, lines);
+          }
         }
       }
     }
-  });
 
-  return found;
-}
-
-// node.next or node.prev MemberExpression inside a WhileStatement
-function detectLinkedList(ast: TSESTree.Program, lines: string[]): AstHit | null {
-  let found: AstHit | null = null;
-
-  walkAst(ast, (node, ancestors) => {
-    if (found) return;
+    // ── linked list ──
     if (
+      !linkedList &&
       node.type === "MemberExpression" &&
       !node.computed &&
       node.property.type === "Identifier"
@@ -703,12 +718,71 @@ function detectLinkedList(ast: TSESTree.Program, lines: string[]): AstHit | null
         const inWhile = ancestors.some(
           (a) => a.type === "WhileStatement" || a.type === "DoWhileStatement"
         );
-        if (inWhile) found = nodeHit(node, lines);
+        if (inWhile) linkedList = nodeHit(node, lines);
+      }
+    }
+
+    // ── observer ──
+    if (node.type === "CallExpression" && node.callee.type === "MemberExpression") {
+      const me = node.callee as TSESTree.MemberExpression;
+      if (!me.computed && me.property.type === "Identifier") {
+        const method = (me.property as TSESTree.Identifier).name;
+        if (method === "on" || method === "addEventListener" || method === "addListener") {
+          hasSubscribe = true;
+          if (!observerFirstHit) observerFirstHit = nodeHit(node, lines);
+        }
+        if (method === "emit" || method === "dispatchEvent" || method === "trigger") hasPublish = true;
+      }
+    }
+
+    // ── singleton ──
+    if (!singleton && node.type === "ClassDeclaration") {
+      const cls = node as TSESTree.ClassDeclaration;
+      let hasStaticInstance = false;
+      let hasGetInstance = false;
+      for (const member of cls.body.body) {
+        if (
+          (member.type === "PropertyDefinition" || member.type === "MethodDefinition") &&
+          member.static
+        ) {
+          const key =
+            member.key.type === "Identifier" ? (member.key as TSESTree.Identifier).name : "";
+          if (/^_?instance$/i.test(key)) hasStaticInstance = true;
+          if (member.type === "MethodDefinition" && /getInstance|instance/i.test(key))
+            hasGetInstance = true;
+        }
+      }
+      if (hasStaticInstance && hasGetInstance) singleton = nodeHit(node, lines);
+    }
+
+    // ── factory ──
+    if (!factory) {
+      if (node.type === "FunctionDeclaration") {
+        const fn = node as TSESTree.FunctionDeclaration;
+        if (fn.id?.name && FACTORY_RE.test(fn.id.name) && fn.returnType) {
+          factory = nodeHit(node, lines);
+        }
+      }
+      if (!factory && node.type === "MethodDefinition") {
+        const m = node as TSESTree.MethodDefinition;
+        if (
+          m.key.type === "Identifier" &&
+          FACTORY_RE.test((m.key as TSESTree.Identifier).name) &&
+          (m.value as TSESTree.FunctionExpression).returnType
+        ) {
+          factory = nodeHit(node, lines);
+        }
       }
     }
   });
 
-  return found;
+  return {
+    heap,
+    linkedList,
+    observer: hasSubscribe && hasPublish ? observerFirstHit : null,
+    singleton,
+    factory,
+  };
 }
 
 // Combine AST detectors + regex for safe signals on a single TS/JS file
@@ -732,13 +806,16 @@ function scanFindingsAst(
 
   const recursionSig = SIGNALS.find((s) => s.name === "Recursion")!;
   const stackSig = SIGNALS.find((s) => s.name === "Stack / Queue")!;
+  // The 5 pure signals share one walk; addHit order is kept identical to before
+  // (it matters — findings are globally capped, so order decides which survive).
+  const pure = detectPureSignals(ast, lines);
   addHit(detectRecursion(ast, lines), recursionSig);
   addHit(detectStackQueue(ast, lines), stackSig);
-  addHit(detectHeap(ast, lines), HEAP_SIGNAL);
-  addHit(detectLinkedList(ast, lines), LINKEDLIST_SIGNAL);
-  addHit(detectObserver(ast, lines), OBSERVER_SIGNAL);
-  addHit(detectSingleton(ast, lines), SINGLETON_SIGNAL);
-  addHit(detectFactory(ast, lines), FACTORY_SIGNAL);
+  addHit(pure.heap, HEAP_SIGNAL);
+  addHit(pure.linkedList, LINKEDLIST_SIGNAL);
+  addHit(pure.observer, OBSERVER_SIGNAL);
+  addHit(pure.singleton, SINGLETON_SIGNAL);
+  addHit(pure.factory, FACTORY_SIGNAL);
   addHit(detectBacktracking(ast, lines), BACKTRACKING_SIGNAL);
 
   // Regex for signals that work fine on TS/JS (false-positive rate is low)
@@ -780,82 +857,6 @@ const BACKTRACKING_SIGNAL = {
   dsaConnection: "Backtracking — recursive DFS with pruning; exponential worst-case O(k^n) but pruning matters.",
   practiceTask: "Solve LeetCode #46 (Permutations) using backtracking; trace the call tree on [1,2,3].",
 };
-
-// .on()/.addEventListener() AND .emit()/.dispatchEvent() in the same file
-function detectObserver(ast: TSESTree.Program, lines: string[]): AstHit | null {
-  let hasSubscribe = false;
-  let hasPublish = false;
-  let firstHit: AstHit | null = null;
-
-  walkAst(ast, (node) => {
-    if (node.type !== "CallExpression" || node.callee.type !== "MemberExpression") return;
-    const me = node.callee as TSESTree.MemberExpression;
-    if (me.computed || me.property.type !== "Identifier") return;
-    const method = (me.property as TSESTree.Identifier).name;
-    if (method === "on" || method === "addEventListener" || method === "addListener") {
-      hasSubscribe = true;
-      if (!firstHit) firstHit = nodeHit(node, lines);
-    }
-    if (method === "emit" || method === "dispatchEvent" || method === "trigger") hasPublish = true;
-  });
-
-  return hasSubscribe && hasPublish ? firstHit : null;
-}
-
-// ClassDeclaration with static instance field + static getInstance method
-function detectSingleton(ast: TSESTree.Program, lines: string[]): AstHit | null {
-  let found: AstHit | null = null;
-
-  walkAst(ast, (node) => {
-    if (found || node.type !== "ClassDeclaration") return;
-    const cls = node as TSESTree.ClassDeclaration;
-    let hasStaticInstance = false;
-    let hasGetInstance = false;
-    for (const member of cls.body.body) {
-      if (
-        (member.type === "PropertyDefinition" || member.type === "MethodDefinition") &&
-        member.static
-      ) {
-        const key =
-          member.key.type === "Identifier" ? (member.key as TSESTree.Identifier).name : "";
-        if (/^_?instance$/i.test(key)) hasStaticInstance = true;
-        if (member.type === "MethodDefinition" && /getInstance|instance/i.test(key))
-          hasGetInstance = true;
-      }
-    }
-    if (hasStaticInstance && hasGetInstance) found = nodeHit(node, lines);
-  });
-
-  return found;
-}
-
-// Function/method whose name starts with create/build/make and has a return type annotation
-function detectFactory(ast: TSESTree.Program, lines: string[]): AstHit | null {
-  const FACTORY_RE = /^(create|build|make|produce)/i;
-  let found: AstHit | null = null;
-
-  walkAst(ast, (node) => {
-    if (found) return;
-    if (node.type === "FunctionDeclaration") {
-      const fn = node as TSESTree.FunctionDeclaration;
-      if (fn.id?.name && FACTORY_RE.test(fn.id.name) && fn.returnType) {
-        found = nodeHit(node, lines);
-      }
-    }
-    if (node.type === "MethodDefinition") {
-      const m = node as TSESTree.MethodDefinition;
-      if (
-        m.key.type === "Identifier" &&
-        FACTORY_RE.test((m.key as TSESTree.Identifier).name) &&
-        (m.value as TSESTree.FunctionExpression).returnType
-      ) {
-        found = nodeHit(node, lines);
-      }
-    }
-  });
-
-  return found;
-}
 
 // Recursive function that also contains a for-loop (classic backtracking shape)
 function detectBacktracking(ast: TSESTree.Program, lines: string[]): AstHit | null {
