@@ -48,6 +48,10 @@ Use LLM Council when:
 - Checking database schema decisions
 - Evaluating whether a feature is overengineered
 
+Use `ncs_record_decision` after consequential implementation choices to preserve the selected approach, viable alternatives, concise rationale, accepted trade-off, and affected paths in the current workspace. Keep this user-facing; never pass hidden chain-of-thought. Workspace decisions can be reviewed in the Decisions page and exported as Markdown.
+
+Use the workspace Feature Trace page to inspect analyzer-generated end-to-end paths. Its `flow.md` export reflects the latest saved analysis, so re-analyze after source changes before relying on it.
+
 Suggested prompt:
 ```text
 Consult LLM Council for a concise technical review.

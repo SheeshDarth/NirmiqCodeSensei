@@ -641,6 +641,66 @@ Ship v1.0.0. Every blocker is fixed, verified and pushed; the residue is quality
 
 ---
 
+### REVIEW-016 — Change-level decision records, runtime flow traces, and explain-back gate
+
+**Date:** 2026-10-15
+**Trigger:** Request to preserve why AI made consequential code choices, trace actual execution across files, and quiz the user after substantial coding sessions.
+
+**Council Synthesis:**
+
+- **Agreement:** Strong fit for NirmiqCodeSensei's explain-back and project-understanding mission. Use selective entries for consequential choices and actual affected paths; the existing council log and Graphify map already own architecture rulings and stable file relationships.
+- **Trade-off:** Detailed duplicate documentation can drift. Separate responsibilities, link the docs, and only update the runtime paths that change. Markdown and agent instructions cannot technically enforce a quiz across sessions.
+- **Quiz policy:** Define a substantial session by feature/cross-module scope, three or more changed files, or a material architecture/dependency/data-flow/security/behavior change. Ask five diff-grounded questions; require four correct including the core call/data-flow question; remediate and retry after a miss. Treat this as a learning checkpoint, not proof of code correctness.
+- **Vibecode transfer:** Project Manager can surface the documentation through `.claude/project-knowledge.md`, but its current setup does not create repo-root workflow docs or enforce quizzes. Orchestrator can route relevant skills and make execution/handoffs visible; a mandatory tutoring quiz is optional and audience-dependent, not a universal router behavior.
+
+**Decision:** Adopt the above documentation boundaries and quiz workflow in `AGENTS.md`; defer any product-level quiz feature until a separate product decision.
+
+**Status:** ✅ Logged — see [decision.md](decision.md) and [flow.md](flow.md).
+
+---
+
+### REVIEW-017 — Workspace decision capture and analyzed-flow Markdown export
+
+**Date:** 2026-10-16
+**Trigger:** User asked to proceed with implementation of the decision rationale, cross-file flow, and learning-check workflow.
+
+**Council Synthesis:**
+
+- Reuse local SQLite and MCP for structured decision capture instead of requiring agent edits to arbitrary repository files.
+- Keep decision rationale concise and user-facing; do not store private chain-of-thought.
+- Reuse saved analyzer `FeatureTrace[]` for flow Markdown so the exported trace has the same source as the existing Feature Trace UI.
+- Keep the existing assistant-run quiz gate. A persistent in-app quiz needs a separate product design and would duplicate Explain-Back state now.
+
+**Decision:** Add `decision_records`, `ncs_record_decision`, workspace decision review/export, and latest-analysis flow export. Note that flow exports can become stale until reanalysis.
+
+**Status:** ✅ Implemented — lint, typecheck, and production build passed; build reported the existing Turbopack file-tracing warning.
+
+---
+
+### REVIEW-018 — Development bundler cache collision on Windows
+
+**Date:** 2026-10-28
+**Trigger:** Handoff reported intermittent Turbopack startup, instrumentation, endpoint-write, and package-resolution errors.
+
+**Evidence:** The installed CLI resolved Next.js 16.2.7 and reported support for both bundlers. Webpack served four representative routes. Switching to Turbopack with the same `.next/dev` artifacts reproduced `MODULE_UNPARSABLE` for the existing `instrumentation.ts`; preserving the old cache and starting Turbopack with a fresh one served the same routes and remained available during a 30-second idle observation. The package's workspace root was already pinned in `next.config.ts`. The handoff's “Failed to write app endpoint” and “Next.js package not found” messages did not recur.
+
+**Decision:** Pin `npm run dev` to Webpack for this Windows workflow. Preserve generated caches during bundler comparisons. Do not change `instrumentation.ts`, `next.config.ts`, or Next.js dependencies without new evidence.
+
+**Status:** ✅ Implemented; route and stability checks recorded in `docs/flow.md`.
+
+---
+
+### REVIEW-019 — Keep imported repositories outside host-app typechecking
+
+**Date:** 2026-10-28
+**Trigger:** `npm run typecheck` began failing after a repository was imported into `data/imported-projects/`.
+
+**Evidence:** TypeScript emitted 193 diagnostics from the imported Smart Billing repository, primarily missing repository-local packages and aliases. The source lives under `data/`, is gitignored user data, and is not part of the CodeSensei app source tree.
+
+**Decision:** Exclude `data/` in the root `tsconfig.json`. Keep the imported project unchanged and use its own toolchain when validating that project directly.
+
+**Status:** ✅ Implemented — host-app typecheck and build pass after the exclusion; see `docs/decision.md` DEC-004 and `docs/flow.md`.
+
 ## Architecture Decisions Summary
 
 | ID | Decision | Outcome | Phase |
@@ -660,3 +720,19 @@ Ship v1.0.0. Every blocker is fixed, verified and pushed; the residue is quality
 | REVIEW-013 | Scaling/load balancing/traffic handling — **N/A by design** for a single-user, loopback-bound, local-first tool; scaling here means per-machine analysis performance (measured in BENCHMARKS.md). Revisit only on a move to a hosted model, data tier first | ✅ Recorded (MS7) — build nothing | 1.0 |
 | REVIEW-015 | Intensive post-1.0 review (code review + 4-agent swarm + council) — found 3 HIGH defects (symlink file read into the AI prompt, refresh destroying student answers, clone-dir path traversal) + a dead distribution build; all fixed, tested, pushed. Deferred: single-pass AST refactor, publish-guard test, `session_logs` index | ✅ Implemented — tests 30/30 | 1.0 |
 | REVIEW-014 | Whole-project v1.0.0 release-readiness — gate green (24/24), security A/100, tarball-verified; the one `hono` high is transitive + unreachable (stdio). Ship after 3 pre-flight checks; build nothing new | ✅ Logged — go to tag/publish (maintainer) | 1.0 |
+| REVIEW-016 | Change-level decision.md + flow.md, and five-question explain-back gate after substantial coding sessions; adapt quiz use for Vibecode repos | ✅ Logged — workflow docs and AGENTS rule | 1.0 |
+| REVIEW-017 | Workspace decision capture via MCP + Markdown exports from decisions and saved feature traces | ✅ Implemented | 1.0 |
+| REVIEW-018 | Next.js dev startup instability — reproduce bundler cache collision, pin normal dev command to Webpack, preserve old caches | ✅ Implemented; verification in `docs/flow.md` | 1.0 |
+| REVIEW-019 | Exclude imported repository user data from CodeSensei's recursive TypeScript include | ✅ Implemented; typecheck/build pass | 1.0 |
+
+
+### REVIEW-020 — Guided Learning Map and durable learning
+
+**Date:** 2026-10-28. **Ruling:** Adopt the approved five-stage master plan: evidence → guided walkthrough/source → durable learning → bounded static calls → editable prerequisites. The councils rejected unsupported runtime claims, graph-only teaching, imports as educational prerequisites and readiness attached only to stable IDs.
+
+**Implemented:** Versioned/legacy snapshot adapter; static possibilities and partial coverage; canonical path/source UI; immutable self-assessment history; independent study records; confined source endpoint; transactionally replaced generated analysis. TypeScript compiler is reused with a restricted in-memory host.
+
+**Limits:** No runtime observation or automatic grading. Unsupported calls/config inheritance remain unresolved. Human learning efficacy and the rubric threshold await beginner trials. See decision.md DEC-005/006, flow.md and LEARNING_MAP_MASTER_PLAN.md.
+
+
+**REVIEW-020 verification:** 47 isolated tests, lint/typecheck/build, standalone privacy guard, packaged HTTP checks and MCP handshake pass. Dense 300-file/100-parsed fixture added 17.24% median analysis time against a 25% budget. Browser interaction and the five-beginner study remain pending; the local rubric is not calibrated as verified mastery.

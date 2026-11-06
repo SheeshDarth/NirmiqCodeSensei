@@ -385,3 +385,8 @@ Do not trust pasted code or imported files.
 - Accessibility
 - Error states
 - Documentation pass
+
+
+## Pathway architecture update (2026-10-28)
+
+Versioned snapshots in feature_traces_json normalize legacy arrays. Services return ServiceResult; source reads accept server-owned target IDs and enforce root/descriptor/hash/size boundaries. Analysis preparation precedes a short synchronous replacement transaction. Learner reviews/attempts and study nodes/edges reference workspaces independently of generated learning maps. The in-memory TypeScript compiler resolves a bounded corpus without executing imported code or loading plugins/external config inheritance. APIs: GET source, GET/POST pathway under each workspace; all use uncached responses and same-origin browser checks. See LEARNING_MAP_MASTER_PLAN.md for contracts and limits.

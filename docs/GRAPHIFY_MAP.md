@@ -20,6 +20,8 @@ Read only those files. Do not load unrelated files.
 Update docs/GRAPHIFY_MAP.md with any new files or changed relationships.
 ```
 
+For change rationale, use [`docs/decision.md`](decision.md). For real cross-file execution traces and the exact session change boundary, use [`docs/flow.md`](flow.md). Keep this map focused on stable file and module relationships.
+
 ---
 
 ## Phase Progress Graph
@@ -63,11 +65,15 @@ graph TD
     DebugLab["/debug-lab\napp/debug-lab/page.tsx"]
     DSABridge["/dsa-bridge\napp/dsa-bridge/page.tsx"]
     Settings["/settings\napp/settings/page.tsx"]
+    Decisions["/workspaces/[id]/decisions\napp/(app)/workspaces/[id]/decisions/page.tsx"]
+    FlowExport["/workspaces/[id]/flow\napp/(app)/workspaces/[id]/flow/route.ts"]
 
     Root --> Home
     Root --> Dashboard
     Root --> Workspaces
     Workspaces --> WorkspaceDetail
+    WorkspaceDetail --> Decisions
+    WorkspaceDetail --> FlowExport
     Root --> ExplainBack
     Root --> DebugLab
     Root --> DSABridge
@@ -206,12 +212,24 @@ erDiagram
         integer created_at
         integer updated_at
     }
+    decision_records {
+        text id PK
+        text workspace_id FK
+        text title
+        text chosen_option
+        text alternatives_json
+        text rationale
+        text accepted_tradeoff
+        text affected_paths_json
+        integer created_at
+    }
 
     workspaces ||--o{ learning_maps : "has"
     workspaces ||--o{ explain_back_questions : "has"
     workspaces ||--o{ debug_logs : "has"
     workspaces ||--o{ daily_logs : "has"
     workspaces ||--o{ concept_links : "has"
+    workspaces ||--o{ decision_records : "has"
     learning_maps ||--o{ explain_back_questions : "generates"
 ```
 
@@ -227,8 +245,11 @@ erDiagram
 | Debug Lab | `lib/services/debug-log.service.ts`, `components/debug-lab/`, `app/debug-lab/page.tsx` |
 | Dashboard | `components/dashboard/`, `app/dashboard/page.tsx` |
 | Export | `lib/services/export.service.ts` |
+| Decision Log | `lib/validators/decision.schema.ts`, `lib/services/decision.service.ts`, `mcp-server/index.ts`, `app/(app)/workspaces/[id]/decisions/` |
+| Flow Markdown Export | `lib/services/export.service.ts`, `lib/services/learning-map.service.ts`, `app/(app)/workspaces/[id]/flow/route.ts` |
 | Layout / Navigation | `components/layout/`, `app/layout.tsx` |
 | DB Schema | `lib/db/schema.ts`, `lib/db/client.ts` |
+| Development / TypeScript Config | `package.json`, `tsconfig.json`, `next.config.ts`, `instrumentation.ts` |
 | Validation | `lib/validators/` |
 
 ---
@@ -304,5 +325,28 @@ erDiagram
 | `components/daily-log/DailyLogEntry.tsx` | 9 | ✅ Done |
 | `app/(app)/daily-log/page.tsx` | 9 | ✅ Done |
 | `app/(app)/dashboard/page.tsx` | 9 | ✅ Done |
+| `lib/validators/decision.schema.ts` | 10 | ✅ Done |
+| `lib/services/decision.service.ts` | 10 | ✅ Done |
+| `app/(app)/workspaces/[id]/decisions/page.tsx` | 10 | ✅ Done |
+| `app/(app)/workspaces/[id]/decisions/export/route.ts` | 10 | ✅ Done |
+| `app/(app)/workspaces/[id]/flow/route.ts` | 10 | ✅ Done |
+| `lib/db/migrations/0012_complete_marauders.sql` | 10 | ✅ Done |
 
 > Update this table after completing each file.
+
+
+## Guided pathway implementation (2026-10-28)
+
+| Capability | Files |
+|---|---|
+| Evidence/identity contracts and legacy normalization | lib/pathways/shared.ts, snapshot.ts |
+| Bounded static calls and local alias configuration | lib/pathways/static-calls.ts |
+| Snapshot/freshness and confined source | lib/services/pathway.service.ts, source-view.service.ts |
+| Immutable review/attempt persistence | lib/services/pathway-learning.service.ts |
+| Study catalog, user prerequisites and cycle checks | lib/services/study-path.service.ts |
+| Canonical guided UI and history | components/learning-map/LearningMapExperience.tsx, components/explain-back/PathwayAttemptHistory.tsx |
+| Source / learning APIs | app/(app)/workspaces/[id]/source/route.ts, pathway/route.ts |
+| Durable schema | pathway_reviews, pathway_attempts, study_nodes, study_edges; migration 0013 |
+| Behavioral/security/refresh fixtures | tests/pathways.test.mts |
+
+Learning Map page → pathway snapshot/freshness → guided UI → confined source or learner-record APIs. Analysis → snapshot builder → bounded compiler → transactional map swap. Legacy Feature Trace redirects to Learning Map. See LEARNING_MAP_MASTER_PLAN.md for rollout status.

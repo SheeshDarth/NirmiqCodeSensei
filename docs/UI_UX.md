@@ -215,3 +215,8 @@ DSA Bridge:
 - Focus states required.
 - Buttons must have clear labels.
 - Avoid color-only status indication; include text labels too.
+
+
+## Guided Learning Map update (2026-10-28)
+
+Default to Code walkthrough when paths exist. Show numbered steps with directed connectors, why-file/why-next explanations and source side by side on desktop, stacked on mobile. Explore map lazy-loads and highlights the selected walkthrough; Study path shows deterministic prerequisite stages and explicit arrows. Every action works through readable lists and normal keyboard controls. Source anchors distinguish matching, changed and unknown content. Reviewed, explanation recorded and self-assessed ready remain separate labels. Graph camera/particles respect reduced motion.

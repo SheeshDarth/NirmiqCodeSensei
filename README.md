@@ -133,6 +133,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 | `add_question` | Add an explain-back question to a workspace |
 | `add_concept_link` | Link a DSA/CS concept to a workspace |
 | `add_daily_log` | Log what you built, understood, and what's still unclear |
+| `ncs_record_decision` | Save a concise implementation decision, alternatives, rationale, trade-off, and affected paths to a workspace |
 | `get_weak_questions` | Surface questions you've been avoiding or haven't answered |
 | `ncs_explain_command` | Explain a shell command in plain English with a risk level |
 
@@ -214,3 +215,6 @@ If NirmiqCodeSensei helps you, please ⭐ star the repo and credit the project w
 ---
 
 *Built for engineers who want to actually understand what they ship.*
+
+
+Learning Map now offers guided code walkthroughs, source excerpts, possible-call evidence, immutable local explain-back assessments, and editable study prerequisites. Older analyses remain readable; refresh an imported workspace to generate the richer evidence snapshot. See [the implementation plan](docs/LEARNING_MAP_MASTER_PLAN.md) for coverage limits and outstanding beginner validation.

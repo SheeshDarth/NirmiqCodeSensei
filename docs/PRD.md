@@ -252,3 +252,8 @@ It should feel like:
 - A learning debugger
 - A thinking trainer
 - A proof-of-understanding system
+
+
+## Guided Learning Map update (2026-10-28)
+
+The primary learning action is following a bounded code walkthrough with a visible start, numbered steps, relationship evidence, source excerpt and honest stopping reason. Explore map supplies optional dependency context. Students explicitly review steps, write an explanation, then self-assess five evidence-based criteria. Study prerequisites are separate educational suggestions requiring acceptance. History and user-authored study choices survive source reanalysis. Self-assessment is not externally verified mastery; learner trials remain required.

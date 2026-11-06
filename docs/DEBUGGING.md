@@ -122,6 +122,16 @@ Checklist:
 - Error UI
 - Loading state
 
+### Next.js development bundler cache (Windows)
+
+Symptoms can include `MODULE_UNPARSABLE` for `instrumentation.ts` even though the file exists, failed app-endpoint writes, or a “Next.js package not found” message after switching between Webpack and Turbopack.
+
+Check the actual CLI banner to identify the active bundler. Next 16 writes development artifacts under `.next/dev`; switching bundlers while reusing that cache can leave output from the previous bundler. Reproduce with the same routes, then stop the server and rename `.next/dev` to a backup before starting the alternate bundler. Retain the backup instead of deleting it. If the clean-cache run works, keep the project's normal dev script pinned to one bundler and verify that command on the target routes. Do not change `instrumentation.ts` or upgrade Next.js based on the stale-cache error alone.
+
+### TypeScript errors inside imported repositories
+
+If `npm run typecheck` reports missing aliases, dependencies, or implicit `any` errors under `data/imported-projects/`, check `tsconfig.json` before installing packages or editing the imported project. These files are external user data; exclude `data/` from the host app's TypeScript program and leave the imported source/dependencies unchanged.
+
 ## 5. Claude Code Debug Prompt
 
 Use this when debugging:

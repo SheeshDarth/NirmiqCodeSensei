@@ -58,3 +58,15 @@ Recreate `scripts/_benchmark.mts` from this methodology (synthetic N-file projec
 → time `analyzeCode`, `computeSeniorReview`, `computeSourceFingerprint`), run
 `npx tsx scripts/_benchmark.mts`, then delete it. Numbers vary with hardware; the
 shape (flat lens pass, bounded walk, cheap fingerprint) is what matters.
+
+
+## Guided pathways: 2026-10-28
+
+Local Node 24.12.0, 300-file generated TypeScript fixtures, two warm-ups followed by five paired measurements, median times. Baseline is analyzeCode(); added work is buildFeatureTraces() + buildSnapshot() including the compiler resolver. These are fixture measurements, not guarantees for arbitrary repositories.
+
+| Fixture | Scanned | Compiler-parsed | Baseline | Added | Overhead |
+|---|---:|---:|---:|---:|---:|
+| Sparse entry/import graph | 300 | 2 | 166.84 ms | 4.05 ms | 2.43% |
+| Dense reachable import chain | 300 | 100 | 146.46 ms | 25.25 ms | 17.24% |
+
+Both fall below the plan's 25% fixture budget. The compiler host reserves entry files, resolves reachable imports within a 100-file parse budget, and performs no filesystem reads itself. Static relationships are bounded to 5,000 per category, import processing is sampled at 5,000 relationships, and static walkthrough recommendations are capped at 128 entry functions with explicit partial-coverage warnings. The graph is lazy-loaded in Explore mode. Human comprehension measurements remain pending.

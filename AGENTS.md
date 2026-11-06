@@ -35,6 +35,8 @@ Phase 1 — App Shell. See `docs/GRAPHIFY_MAP.md` for the full phase and file de
 6. Log architecture decisions in `docs/COUNCIL_REVIEW_LOG.md`.
 7. Never commit `.env`, `*.db`, `node_modules`, or secrets.
 8. Never push to remote unless explicitly instructed.
+9. For code changes, add consequential implementation choices to `docs/decision.md` and update the affected runtime trace in `docs/flow.md`. Keep architecture/security council rulings in `docs/COUNCIL_REVIEW_LOG.md`; keep stable file relationships in `docs/GRAPHIFY_MAP.md`.
+10. A substantial coding session means a feature or cross-module fix, a change spanning three or more files, or a change to architecture, dependencies, data flow, security, or user-visible behavior. At the end of each substantial coding session, quiz the user on the changed path and the main decision. Ask five short questions tied to the actual diff; pass requires at least 4/5 correct, including the core call/data-flow question. If the user misses the threshold, explain the gaps and retry with a fresh quiz before treating the learning check as passed. This is a learning gate, not a code-correctness check. Trivial edits and documentation-only sessions do not trigger it unless the user explicitly requests a quiz.
 
 ## Service Layer Pattern
 All service functions must return:
