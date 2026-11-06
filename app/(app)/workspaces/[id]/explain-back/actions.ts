@@ -9,10 +9,11 @@ import {
   submitAnswer,
   deleteQuestion,
 } from "@/lib/services/explain-back.service";
+import { createDiffQuiz } from "@/lib/services/diff-quiz.service";
 import { revalidatePath } from "next/cache";
 import { getString, getUUID } from "@/lib/utils/server";
 
-export type ActionState = { error?: string } | null;
+export type ActionState = { error?: string; message?: string } | null;
 
 function revalidate(workspaceId: string) {
   revalidatePath(`/workspaces/${workspaceId}/explain-back`);
@@ -49,6 +50,7 @@ export async function submitAnswerAction(
   const parsed = submitAnswerSchema.safeParse({
     userAnswer: getString(formData, "userAnswer"),
     confidence: getString(formData, "confidence"),
+    predictedConfidence: getString(formData, "predictedConfidence") ?? undefined,
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
@@ -58,6 +60,22 @@ export async function submitAnswerAction(
 
   revalidate(workspaceId);
   return null;
+}
+
+export async function diffQuizAction(
+  workspaceId: string,
+  _prev: ActionState
+): Promise<ActionState> {
+  const result = await createDiffQuiz(workspaceId);
+  if (!result.ok) return { error: result.error };
+  revalidate(workspaceId);
+  const d = result.data;
+  return {
+    message:
+      d.created > 0
+        ? `Added ${d.created} question(s) from ${d.files} changed file(s) (${d.range}).`
+        : "No new questions — nothing new changed since last time.",
+  };
 }
 
 export async function deleteQuestionAction(formData: FormData) {

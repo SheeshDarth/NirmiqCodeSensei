@@ -4,7 +4,12 @@ import { useActionState, useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Eye } from "lucide-react";
 import type { ActionState } from "@/app/(app)/workspaces/[id]/explain-back/actions";
 import type { Question } from "@/lib/services/explain-back.service";
-import { parseExpectedPoints } from "@/lib/utils";
+import {
+  parseExpectedPoints,
+  coverageLevel,
+  classifyCalibration,
+  type Level,
+} from "@/lib/utils";
 
 const DIFFICULTY_COLOR = {
   beginner: "text-emerald-400 bg-emerald-500/10",
@@ -47,6 +52,9 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  // Prediction is locked once saved; before that it must be chosen before reveal.
+  const lockedPrediction = question.predictedConfidence as Level | null;
+  const [predicted, setPredicted] = useState<Level | null>(lockedPrediction);
 
   const boundSubmit = submitAction.bind(null, workspaceId, question.id);
   const [state, formAction, isPending] = useActionState(boundSubmit, null);
@@ -54,6 +62,11 @@ export default function QuestionCard({
   const expectedPoints = parseExpectedPoints(question.expectedPointsJson);
   const hasAnswer = !!question.userAnswer;
   const confidence = question.confidence as keyof typeof CONFIDENCE_META | null;
+  // Outcome: key-point coverage when measured, else the post-reveal self-grade.
+  const actual: Level | null =
+    question.score != null ? coverageLevel(question.score) : confidence;
+  const calibration =
+    lockedPrediction && actual ? classifyCalibration(lockedPrediction, actual) : null;
 
   return (
     <div className="bg-[#0d1117] border border-zinc-800 rounded-lg overflow-hidden">
@@ -77,6 +90,22 @@ export default function QuestionCard({
                 className={`text-xs font-medium px-2 py-0.5 rounded border ${CONFIDENCE_META[confidence].color}`}
               >
                 {CONFIDENCE_META[confidence].label}
+              </span>
+            )}
+            {question.origin === "diff" && (
+              <span className="text-xs text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded">
+                from your changes
+              </span>
+            )}
+            {calibration && (
+              <span
+                className={`text-xs px-2 py-0.5 rounded ${
+                  calibration === "aligned"
+                    ? "text-emerald-400 bg-emerald-500/10"
+                    : "text-amber-400 bg-amber-500/10"
+                }`}
+              >
+                {calibration}
               </span>
             )}
             {!hasAnswer && (
@@ -139,13 +168,48 @@ export default function QuestionCard({
               />
             </div>
 
+            {/* Predict BEFORE revealing key points (calibration) */}
+            <fieldset className="space-y-1.5" disabled={!!lockedPrediction}>
+              <legend className="block text-xs font-medium text-zinc-400">
+                Before you answer: how well do you expect to explain this?
+              </legend>
+              <div className="flex gap-2">
+                {(["red", "yellow", "green"] as const).map((level) => (
+                  <label key={level} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="predictedConfidence"
+                      value={level}
+                      checked={predicted === level}
+                      onChange={() => setPredicted(level)}
+                      className="sr-only peer"
+                    />
+                    <span
+                      className={`text-xs px-3 py-1.5 rounded border transition-colors ${
+                        predicted === level
+                          ? CONFIDENCE_META[level].color
+                          : "border-zinc-700 text-zinc-500 hover:border-zinc-500"
+                      }`}
+                    >
+                      {CONFIDENCE_META[level].label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {lockedPrediction && (
+                <p className="text-xs text-zinc-600">Prediction locked.</p>
+              )}
+            </fieldset>
+
             {/* Reveal expected points */}
             {expectedPoints.length > 0 && (
               <div>
                 <button
                   type="button"
+                  disabled={!predicted}
+                  title={predicted ? undefined : "Make a prediction first"}
                   onClick={() => setRevealed((r) => !r)}
-                  className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Eye size={13} />
                   {revealed ? "Hide key points" : "Reveal key points"}

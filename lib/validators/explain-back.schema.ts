@@ -16,6 +16,8 @@ export const createQuestionSchema = z.object({
   // Set internally by the analyzer (never the manual form): the module slug this
   // question belongs to, for cross-surface grouping (#27/#28).
   moduleKey: z.string().max(60).optional(),
+  // Set internally (diff quiz); never from the manual form.
+  origin: z.enum(["manual", "diff"]).optional(),
 });
 
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
@@ -26,6 +28,8 @@ export const submitAnswerSchema = z.object({
     .min(1, "Write your answer before submitting")
     .max(5000),
   confidence: z.enum(["red", "yellow", "green"]),
+  // Prediction made before key points were revealed; stored once, never overwritten.
+  predictedConfidence: z.enum(["red", "yellow", "green"]).optional(),
   score: z.coerce.number().int().min(0).max(100).optional(),
 });
 

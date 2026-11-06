@@ -1,7 +1,11 @@
 import PathwayAttemptHistory from "@/components/explain-back/PathwayAttemptHistory";
 import { getPathwayLearning } from "@/lib/services/pathway-learning.service";
 import { getWorkspaceById } from "@/lib/services/workspace.service";
-import { getQuestionsByWorkspaceId } from "@/lib/services/explain-back.service";
+import {
+  getQuestionsByWorkspaceId,
+  getCalibration,
+} from "@/lib/services/explain-back.service";
+import DiffQuizButton from "@/components/explain-back/DiffQuizButton";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +15,7 @@ import {
   addQuestionAction,
   submitAnswerAction,
   deleteQuestionAction,
+  diffQuizAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +38,8 @@ export default async function WorkspaceExplainBackPage({
   const questions = questionsResult.ok ? questionsResult.data : [];
 
   const pathwayHistory = await getPathwayLearning(workspaceId);
+  const calResult = await getCalibration(workspaceId);
+  const calibration = calResult.ok ? calResult.data : null;
 
   const answered = questions.filter((q) => q.userAnswer).length;
   const weak = questions.filter(
@@ -58,6 +65,29 @@ export default async function WorkspaceExplainBackPage({
           Do not paste AI answers. Explain it like you are in a viva.
         </p>
       </div>
+
+      {workspace.sourcePath && (
+        <DiffQuizButton workspaceId={workspaceId} action={diffQuizAction} />
+      )}
+
+      {calibration && calibration.measured > 0 && (
+        <div className="bg-[#0d1117] border border-zinc-800 rounded-lg p-4">
+          <p className="text-xs text-zinc-500">
+            Understanding accuracy (your prediction vs. key-point coverage)
+          </p>
+          <p className="text-2xl font-bold text-cyan-400 mt-1">
+            {calibration.accuracy}%
+            <span className="text-xs font-normal text-zinc-600 ml-2">
+              over {calibration.measured} answered
+            </span>
+          </p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {calibration.overconfident} overconfident · {calibration.aligned}{" "}
+            aligned · {calibration.underconfident} underconfident. Coverage is a
+            keyword heuristic, not a grade.
+          </p>
+        </div>
+      )}
 
       <details className="rounded-lg border border-zinc-800 p-4">
         <summary className="text-sm text-zinc-200 cursor-pointer">Pathway explanations ({pathwayHistory.ok ? pathwayHistory.data.attempts.length : 0})</summary>

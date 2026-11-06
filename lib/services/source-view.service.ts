@@ -8,6 +8,8 @@ import { getPathwaySnapshot } from "./pathway.service";
 
 const ALLOWED = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|cs|rb|php|vue|svelte)$/i;
 const BLOCKED = /(^|\/)(\.[^/]+|node_modules|vendor|dist|build|coverage|credentials?|secrets?)(\/|$)/i;
+/** Paths that must never be read or summarised (dot-dirs, deps, build output, credentials). */
+export const BLOCKED_SOURCE_PATH = BLOCKED;
 
 /** Read a descriptor only after resolving a server-owned snapshot target. Never execute source. */
 export function readConfinedSource(root: string, file: string, expectedHash: string | null, anchorLine = 1): ServiceResult<SourceExcerpt> {

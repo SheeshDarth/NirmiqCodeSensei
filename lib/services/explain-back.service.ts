@@ -7,9 +7,60 @@ import type {
   CreateQuestionInput,
   SubmitAnswerInput,
 } from "@/lib/validators/explain-back.schema";
-import { parseExpectedPoints } from "@/lib/utils";
+import {
+  parseExpectedPoints,
+  keyPointCoverage,
+  coverageLevel,
+  classifyCalibration,
+  type Calibration,
+  type Level,
+} from "@/lib/utils";
 
 export type Question = typeof explainBackQuestions.$inferSelect;
+
+export type CalibrationSummary = {
+  /** Questions that have both a prediction and an outcome. */
+  measured: number;
+  overconfident: number;
+  aligned: number;
+  underconfident: number;
+  /** aligned / measured, 0-100; null until something is measured. */
+  accuracy: number | null;
+};
+
+/** Outcome level: key-point coverage when available, else the post-reveal self-grade. */
+export function actualLevel(q: Question): Level | null {
+  if (q.score != null) return coverageLevel(q.score);
+  return q.confidence ?? null;
+}
+
+export function calibrationOf(q: Question): Calibration | null {
+  const actual = actualLevel(q);
+  if (!q.predictedConfidence || !actual) return null;
+  return classifyCalibration(q.predictedConfidence, actual);
+}
+
+export async function getCalibration(
+  workspaceId: string
+): Promise<ServiceResult<CalibrationSummary>> {
+  const result = await getQuestionsByWorkspaceId(workspaceId);
+  if (!result.ok) return result;
+  const s: CalibrationSummary = {
+    measured: 0,
+    overconfident: 0,
+    aligned: 0,
+    underconfident: 0,
+    accuracy: null,
+  };
+  for (const q of result.data) {
+    const c = calibrationOf(q);
+    if (!c) continue;
+    s.measured++;
+    s[c]++;
+  }
+  if (s.measured > 0) s.accuracy = Math.round((s.aligned / s.measured) * 100);
+  return { ok: true, data: s };
+}
 
 export async function createQuestion(
   workspaceId: string,
@@ -34,6 +85,7 @@ export async function createQuestion(
         question: input.question,
         difficulty: input.difficulty,
         expectedPointsJson,
+        origin: input.origin ?? "manual",
       })
       .returning();
     return { ok: true, data: q };
@@ -102,12 +154,29 @@ export async function submitAnswer(
   input: SubmitAnswerInput
 ): Promise<ServiceResult<Question>> {
   try {
+    const [existing] = await db
+      .select()
+      .from(explainBackQuestions)
+      .where(eq(explainBackQuestions.id, questionId));
+    if (!existing)
+      return { ok: false, error: "Question not found", code: "NOT_FOUND" };
+
+    // Heuristic key-point coverage is the measured outcome; a caller-supplied
+    // score is only used when the question has no key points.
+    const coverage = keyPointCoverage(
+      input.userAnswer,
+      parseExpectedPoints(existing.expectedPointsJson)
+    );
+
     const [updated] = await db
       .update(explainBackQuestions)
       .set({
         userAnswer: input.userAnswer,
         confidence: input.confidence,
-        score: input.score ?? null,
+        score: coverage ?? input.score ?? null,
+        // A prediction is recorded once; re-answering must not rewrite history.
+        predictedConfidence:
+          existing.predictedConfidence ?? input.predictedConfidence ?? null,
         updatedAt: Date.now(),
       })
       .where(eq(explainBackQuestions.id, questionId))

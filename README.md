@@ -134,6 +134,8 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 | `add_concept_link` | Link a DSA/CS concept to a workspace |
 | `add_daily_log` | Log what you built, understood, and what's still unclear |
 | `ncs_record_decision` | Save a concise implementation decision, alternatives, rationale, trade-off, and affected paths to a workspace |
+| `ncs_diff_context` | Summarise what just changed in the project (uncommitted + new files, or the latest commit): files, new symbols, new dependencies. Your assistant uses it to write sharp questions about the code it just wrote |
+| `ncs_diff_quiz` | Offline: turn those changes straight into explain-back questions (deduplicated, no API key) |
 | `get_weak_questions` | Surface questions you've been avoiding or haven't answered |
 | `ncs_explain_command` | Explain a shell command in plain English with a risk level |
 
@@ -161,7 +163,8 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 - **Deep Review** — eight-lens senior-engineer report (security, testing, code health, architecture, frontend, backend, dependencies, feasibility) computed locally from your real code, graded A–F with file:line findings.
 - **Learning Map** — Obsidian-style architecture graph with hover-highlight, search, layer filters, focus/local views, and 2D/3D — badged with the review's security & complexity findings.
 - **DSA Bridge** — the data structures & algorithms actually detected in your code, each teaching the *core CS concept* behind it and *how it shows up in your code* (file, line, snippet), with a practice task; generic stack concepts are kept in a separate section.
-- **Explain-Back** — questions that force you to prove you understand, not just that it runs.
+- **Explain-Back** — questions that force you to prove you understand, not just that it runs. **Quiz me on my latest changes** turns what your AI just wrote (git diff) into questions in one click.
+- **Calibration** — predict how well you'll explain something *before* you see the key points; the app compares that with a key-point coverage score and shows whether you're over- or under-confident. Coverage is a keyword heuristic, not a grade of correctness.
 - **Workspaces** — one workspace per project; log everything in one place.
 - **Debug Lab** — structured debug logs so you stop making the same mistakes twice.
 - **Daily Log** — what did you build today? what's still unclear? what next?

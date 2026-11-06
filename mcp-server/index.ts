@@ -25,7 +25,8 @@ import { z } from "zod";
 // ── Service imports (relative — avoids path-alias complexity in tsx) ──────────
 import { listWorkspaces, getWorkspaceById } from "../lib/services/workspace.service";
 import { createDebugLog, getDebugLogsByWorkspaceId } from "../lib/services/debug-log.service";
-import { createQuestion, getQuestionsByWorkspaceId, getWeakQuestions } from "../lib/services/explain-back.service";
+import { createQuestion, getQuestionsByWorkspaceId, getWeakQuestions, getCalibration } from "../lib/services/explain-back.service";
+import { getDiffContext, createDiffQuiz, formatDiffContext } from "../lib/services/diff-quiz.service";
 import { createConceptLink, getConceptLinksByWorkspaceId } from "../lib/services/concept-link.service";
 import { createDailyLog, getDailyLogsByWorkspaceId } from "../lib/services/daily-log.service";
 import { getLearningMapByWorkspaceId } from "../lib/services/learning-map.service";
@@ -228,6 +229,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "ncs_diff_context",
+      description:
+        "Summarise what just changed in the workspace's source folder (uncommitted work including new files, or the latest commit if clean): files, new symbols, new dependencies, error handling. Call this at the end of a coding session, then write 3-5 sharp explain-back questions about the changes and persist them with add_question. Read-only; secrets are redacted.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace_id: { type: "string", description: "Target workspace UUID" },
+          base: { type: "string", description: "Optional git ref to compare the working tree against (e.g. main)" },
+        },
+        required: ["workspace_id"],
+      },
+    },
+    {
+      name: "ncs_diff_quiz",
+      description:
+        "Offline: create explain-back questions directly from the latest changes (no AI key needed). Questions are deduplicated, so it is safe to call after every session. Prefer ncs_diff_context + add_question when you can write better questions yourself.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace_id: { type: "string", description: "Target workspace UUID" },
+          base: { type: "string", description: "Optional git ref to compare against" },
+        },
+        required: ["workspace_id"],
+      },
+    },
+    {
       name: "get_weak_questions",
       description:
         "Get all explain-back questions the student marked as weak (red confidence). Use this to suggest targeted review at the start of a session.",
@@ -360,13 +387,14 @@ async function runTool(name: string, args: unknown) {
       // ── get_workspace_summary ────────────────────────────────────────────
       case "get_workspace_summary": {
         const { workspace_id } = z.object({ workspace_id: z.string() }).parse(args);
-        const [wsR, mapR, qR, dbR, clR, dlR] = await Promise.all([
+        const [wsR, mapR, qR, dbR, clR, dlR, calR] = await Promise.all([
           getWorkspaceById(workspace_id),
           getLearningMapByWorkspaceId(workspace_id),
           getQuestionsByWorkspaceId(workspace_id),
           getDebugLogsByWorkspaceId(workspace_id),
           getConceptLinksByWorkspaceId(workspace_id),
           getDailyLogsByWorkspaceId(workspace_id),
+          getCalibration(workspace_id),
         ]);
         if (!wsR.ok) return err("Workspace not found");
 
@@ -403,6 +431,9 @@ async function runTool(name: string, args: unknown) {
           "",
           `## Explain-Back`,
           `${questions.length} questions | ${confident} confident | ${weak} weak`,
+          calR.ok && calR.data.measured > 0
+            ? `Calibration: ${calR.data.accuracy}% accurate over ${calR.data.measured} (${calR.data.overconfident} overconfident, ${calR.data.underconfident} underconfident)`
+            : "Calibration: not enough predictions yet",
           "",
           `## Debug Lab`,
           `${debugLogs.length} bug(s) logged`,
@@ -529,6 +560,23 @@ async function runTool(name: string, args: unknown) {
         const result = await createDecisionRecord(raw.workspace_id, input);
         if (!result.ok) return err(result.error);
         return ok(`✅ Decision recorded: "${raw.title}"\nView: http://127.0.0.1:3000/workspaces/${raw.workspace_id}/decisions`);
+      }
+
+      case "ncs_diff_context": {
+        const v = z.object({ workspace_id: z.string(), base: z.string().optional() }).parse(args);
+        const result = await getDiffContext(v.workspace_id, v.base);
+        if (!result.ok) return err(result.error);
+        return ok(formatDiffContext(result.data));
+      }
+
+      case "ncs_diff_quiz": {
+        const v = z.object({ workspace_id: z.string(), base: z.string().optional() }).parse(args);
+        const result = await createDiffQuiz(v.workspace_id, v.base);
+        if (!result.ok) return err(result.error);
+        const d = result.data;
+        return ok(
+          `✅ ${d.created} question(s) created from ${d.files} changed file(s) (${d.range})${d.skipped ? `, ${d.skipped} already asked` : ""}.\nAnswer them at http://127.0.0.1:3000/workspaces/${v.workspace_id}/explain-back`
+        );
       }
 
       // ── get_weak_questions ────────────────────────────────────────────────
