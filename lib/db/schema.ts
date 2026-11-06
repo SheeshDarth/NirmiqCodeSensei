@@ -84,6 +84,13 @@ export const explainBackQuestions = sqliteTable("explain_back_questions", {
   userAnswer: text("user_answer"),
   score: integer("score"),
   confidence: text("confidence", { enum: ["red", "yellow", "green"] }),
+  // Calibration: the learner's prediction, recorded BEFORE key points are
+  // revealed. Compared with the measured outcome to show over/under-confidence.
+  predictedConfidence: text("predicted_confidence", {
+    enum: ["red", "yellow", "green"],
+  }),
+  // Where the question came from; "diff" = generated from a git diff.
+  origin: text("origin", { enum: ["manual", "diff"] }),
   createdAt: integer("created_at")
     .notNull()
     .$defaultFn(() => Date.now()),
