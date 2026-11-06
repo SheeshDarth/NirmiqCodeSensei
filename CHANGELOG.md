@@ -7,9 +7,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [1.0.0] — 2026-07-16
+## [1.0.0] — unreleased
 
-First public release. NirmiqCodeSensei is a local-first learning OS: point it at a project
+First public release (not yet tagged or published; the date is set when the tag is pushed).
+NirmiqCodeSensei is a local-first learning OS: point it at a project
 and it produces a learning map, an 8-lens senior-engineer review, a code-grounded DSA
 breakdown, and explain-back questions. It binds to 127.0.0.1, stores everything in a local
 SQLite database, and sends no telemetry.
@@ -24,7 +25,7 @@ npx nirmiqcodesensei@latest
   never seen the repo. The published package carries a prebuilt Next.js standalone server;
   native modules resolve per-platform at install time, so one tarball serves Windows, Linux
   and macOS. Aliases: `codesensei`, `nirmiq`.
-- **MCP server in the published package** (`npx nirmiqcodesensei mcp`) — 12 tools over stdio
+- **MCP server in the published package** (`npx nirmiqcodesensei mcp`) — 15 tools over stdio
   for Claude Code, Cursor and Windsurf. Bundled at pack time, so no dev toolchain is needed.
 - **Import & analysis.** Local path or GitHub URL → learning map, architecture graph,
   code-grounded DSA concepts, explain-back questions. Offline by default; an optional
@@ -37,6 +38,21 @@ npx nirmiqcodesensei@latest
   project, not the install — and can be downloaded as a backup at any time.
 - `CHANGELOG.md`, and a scaling-N/A architecture decision (REVIEW-013) recording that
   horizontal scaling is a deliberate non-goal for a single-user local-first tool.
+- **Guided code walkthroughs.** The Learning Map now leads with step-by-step paths through the
+  code, a bounded read-only source viewer (content-hash checked), bounded static call
+  resolution through the TypeScript compiler, an editable study path, and decision records.
+  Paths are static evidence, not observed execution, and the UI says so.
+- **Diff Quiz.** One click (or the `ncs_diff_context` / `ncs_diff_quiz` MCP tools) turns what
+  your AI just changed — uncommitted work, new files, or the latest commit — into explain-back
+  questions. Offline; secret-looking lines are redacted.
+- **Calibration.** Predict how well you will explain something *before* the key points are
+  revealed; the app compares that with a key-point coverage score. Coverage is a keyword
+  heuristic, not a grade of correctness, and no learning-effectiveness claim is made.
+- **Demo and onboarding.** "Try the demo" builds a small built-in project into a full
+  workspace offline, with hand-written code-grounded questions, plus a stateless first-run
+  checklist.
+- **Release hardening.** The publish guard is its own tested module, and tagged releases are
+  published by a workflow with npm provenance and an attached SBOM.
 
 ### Fixed
 

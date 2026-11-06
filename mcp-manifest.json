@@ -67,6 +67,21 @@
       "tier": "free"
     },
     {
+      "name": "ncs_record_decision",
+      "description": "Record a consequential implementation decision (chosen option, alternatives, rationale, trade-off, affected paths) to a workspace",
+      "tier": "free"
+    },
+    {
+      "name": "ncs_diff_context",
+      "description": "Summarise what just changed in the project (uncommitted work or the latest commit) so questions can be written about it. Read-only; secrets redacted",
+      "tier": "free"
+    },
+    {
+      "name": "ncs_diff_quiz",
+      "description": "Create deduplicated explain-back questions directly from the latest changes, offline with no API key",
+      "tier": "free"
+    },
+    {
       "name": "get_weak_questions",
       "description": "Surface explain-back questions you have been avoiding or not answered",
       "tier": "free"

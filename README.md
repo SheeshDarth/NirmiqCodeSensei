@@ -171,7 +171,7 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 - **Debug Lab** — structured debug logs so you stop making the same mistakes twice.
 - **Daily Log** — what did you build today? what's still unclear? what next?
 - **Markdown Export** — export any workspace as a clean Markdown file.
-- **MCP Server** — 12 tools your AI assistant can call while you work.
+- **MCP Server** — 15 tools your AI assistant can call while you work.
 
 ---
 

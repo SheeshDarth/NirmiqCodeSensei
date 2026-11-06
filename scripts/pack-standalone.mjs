@@ -26,6 +26,7 @@ import {
 } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { forbiddenReasons } from "./publish-guard.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const STANDALONE = join(ROOT, ".next", "standalone");
@@ -182,18 +183,8 @@ shimNativeIn(join(DIST, ".next", "node_modules"), ".next/node_modules");
 // not stop it — see the note in next.config.ts. The strip above is the fix; this is
 // the proof. Last gate before a tarball goes out, so it fails the build rather than
 // warning.
-const FORBIDDEN = [
-  { test: (p) => p.split(sep)[0] === "data", why: "local database / imported user projects" },
-  { test: (p) => /\.db(-wal|-shm)?$/.test(p), why: "SQLite database" },
-  { test: (p) => p.split(sep).some((s) => s.startsWith(".env")), why: "environment file" },
-  { test: (p) => p.endsWith(".node"), why: "platform-specific native binary" },
-  { test: (p) => p.split(sep).includes(".git"), why: "git history" },
-  // Only a dist-root ignore file is dangerous — it is the one npm applies to the
-  // whole tarball. The .gitignore files individual npm packages ship inside
-  // node_modules are inert here, so don't fail on those.
-  { test: (p) => p === ".gitignore" || p === ".npmignore", why: "root ignore file — would gut the tarball" },
-];
-
+// The rules live in ./publish-guard.mjs so they can be tested without running
+// this script (which deletes and rebuilds dist/).
 const offenders = [];
 const walk = (dir) => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -203,9 +194,7 @@ const walk = (dir) => {
       continue;
     }
     const rel = relative(DIST, full);
-    for (const rule of FORBIDDEN) {
-      if (rule.test(rel)) offenders.push(`${rel}  (${rule.why})`);
-    }
+    for (const why of forbiddenReasons(rel)) offenders.push(`${rel}  (${why})`);
   }
 };
 walk(DIST);
