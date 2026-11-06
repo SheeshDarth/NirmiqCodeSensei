@@ -42,6 +42,8 @@ npx nirmiqcodesensei@latest
 
 That's it. The dashboard opens at [http://127.0.0.1:3000](http://127.0.0.1:3000) — bound to localhost only. Requires Node.js 20+.
 
+No project handy? Click **Try the demo** on the dashboard: it builds a small built-in task tracker into a full workspace (walkthrough, source, questions) in a few seconds — offline, no key.
+
 Your learning data lives in `data/` **in the directory you launch from**, so each project keeps its own history, and it's yours to back up, move or delete. Migrations are applied automatically on first start.
 
 ```bash

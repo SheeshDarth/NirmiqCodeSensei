@@ -6,6 +6,7 @@ import {
   deleteWorkspace,
 } from "@/lib/services/workspace.service";
 import { reanalyzeProject } from "@/lib/services/project-analyzer.service";
+import { importDemoProject } from "@/lib/services/demo.service";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getString, getUUID } from "@/lib/utils/server";
@@ -50,6 +51,17 @@ export async function deleteWorkspaceAction(formData: FormData): Promise<void> {
   // failure reported success and hid a workspace that is still there.
   if (!result.ok) return;
   redirect("/workspaces");
+}
+
+/** One click: create (or reopen) the bundled demo and land on its walkthrough. */
+export async function startDemoAction(
+  _prev: { error?: string } | null
+): Promise<{ error?: string } | null> {
+  const result = await importDemoProject();
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/workspaces");
+  revalidatePath("/dashboard");
+  redirect(`/workspaces/${result.data.workspaceId}/learning-map`);
 }
 
 export async function reanalyzeWorkspaceAction(

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { importProjectAction, type ImportState } from "./actions";
+import DemoButton from "@/components/workspace/DemoButton";
+import { startDemoAction } from "@/app/(app)/workspaces/actions";
 
 const INITIAL: ImportState = { status: "idle" };
 
@@ -67,6 +69,17 @@ export default function ImportProjectPage() {
           Works offline — no API key needed. Add <code className="text-zinc-500 bg-zinc-900 px-1 rounded">ANTHROPIC_API_KEY</code> to <code className="text-zinc-500 bg-zinc-900 px-1 rounded">.env.local</code> for deeper AI analysis.
         </p>
       </div>
+
+      {/* No project handy? The bundled demo needs no repo, key or setup. */}
+      {state.status !== "success" && (
+        <div className="flex items-center gap-3 bg-[#0d1117] border border-zinc-800 rounded-lg px-4 py-3">
+          <p className="text-xs text-zinc-400 flex-1">
+            No project handy, or want to see it work first? Explore a small
+            built-in project — nothing is uploaded and no key is needed.
+          </p>
+          <DemoButton action={startDemoAction} variant="quiet" />
+        </div>
+      )}
 
       {/* Success state */}
       {state.status === "success" && (

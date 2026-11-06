@@ -16,6 +16,9 @@ import { listWorkspaces } from "@/lib/services/workspace.service";
 import { getAllQuestions } from "@/lib/services/explain-back.service";
 import { getAllDebugLogs } from "@/lib/services/debug-log.service";
 import { getAllConceptLinks } from "@/lib/services/concept-link.service";
+import { getPathwayLearning } from "@/lib/services/pathway-learning.service";
+import GettingStarted from "@/components/workspace/GettingStarted";
+import { startDemoAction } from "@/app/(app)/workspaces/actions";
 
 const STATUS_COLOR = {
   active: "text-emerald-400",
@@ -56,6 +59,13 @@ export default async function DashboardPage() {
   const recentWs = workspaces.slice(0, 4);
   const isEmpty = workspaces.length === 0;
 
+  // First-run checklist state, derived from stored data (nothing extra tracked).
+  const latest = workspaces[0] ?? null;
+  const pathway = latest ? await getPathwayLearning(latest.id) : null;
+  const walked =
+    !!pathway?.ok && (pathway.data.reviews.length > 0 || pathway.data.attempts.length > 0);
+  const predicted = questions.some((q) => q.predictedConfidence && q.userAnswer);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -65,6 +75,13 @@ export default async function DashboardPage() {
           Your project is not mastered until you can explain it without AI.
         </p>
       </div>
+
+      <GettingStarted
+        workspaceId={latest?.id ?? null}
+        walked={walked}
+        predicted={predicted}
+        startDemo={startDemoAction}
+      />
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
