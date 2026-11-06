@@ -45,9 +45,8 @@ export const learningMaps = sqliteTable("learning_maps", {
   graphJson: text("graph_json"),
   // Senior Review — multi-lens local static analysis (SeniorReview JSON)
   seniorReviewJson: text("senior_review_json"),
-  // Feature traces — end-to-end paths (entry point → … → data layer) built from
-  // the import graph, each hop carrying its layer, symbol, concepts and risks.
-  // JSON array of FeatureTrace. Null for manual maps and pre-0011 analyses.
+  // Versioned static walkthrough snapshot, or a legacy FeatureTrace array.
+  // Import suggestions and possible calls are not observed runtime execution.
   featureTracesJson: text("feature_traces_json"),
   // Source-tree fingerprint (sha256 of path|size|mtime over scanned files) from
   // the analysis run that produced this map. Lets reanalyze skip work when the
@@ -168,6 +167,26 @@ export const sessionLogs = sqliteTable("session_logs", {
     .$defaultFn(() => Date.now()),
 });
 
+// Concise, user-facing implementation rationale. This stores decisions and
+// alternatives, never private chain-of-thought or hidden model reasoning.
+export const decisionRecords = sqliteTable("decision_records", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  chosenOption: text("chosen_option").notNull(),
+  alternativesJson: text("alternatives_json").notNull().default("[]"),
+  rationale: text("rationale").notNull(),
+  acceptedTradeoff: text("accepted_tradeoff"),
+  affectedPathsJson: text("affected_paths_json").notNull().default("[]"),
+  createdAt: integer("created_at")
+    .notNull()
+    .$defaultFn(() => Date.now()),
+});
+
 export const searchChunks = sqliteTable("search_chunks", {
   id: text("id")
     .primaryKey()
@@ -210,3 +229,46 @@ export const conceptLinks = sqliteTable("concept_links", {
     .notNull()
     .$defaultFn(() => Date.now()),
 });
+
+// Learner-owned records reference the workspace, never regenerated learning-map IDs.
+export const pathwayReviews = sqliteTable("pathway_reviews", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  targetKey: text("target_key").notNull(),
+  contentVersion: text("content_version").notNull(),
+  reviewedAt: integer("reviewed_at").notNull().$defaultFn(() => Date.now()),
+}, t => [unique("pathway_reviews_target_version").on(t.workspaceId, t.targetKey, t.contentVersion)]);
+
+export const pathwayAttempts = sqliteTable("pathway_attempts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  pathwayKey: text("pathway_key").notNull(),
+  contentVersion: text("content_version").notNull(),
+  snapshotJson: text("snapshot_json").notNull(),
+  answer: text("answer").notNull(),
+  rubricJson: text("rubric_json").notNull(),
+  scoresJson: text("scores_json").notNull(),
+  score: integer("score").notNull(),
+  ready: integer("ready", { mode: "boolean" }).notNull(),
+  createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+});
+
+export const studyNodes = sqliteTable("study_nodes", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  anchor: text("anchor").notNull(),
+  title: text("title").notNull(),
+  origin: text("origin", { enum: ["catalog", "module", "user"] }).notNull(),
+  position: integer("position").notNull().default(0),
+}, t => [unique("study_nodes_anchor").on(t.workspaceId, t.anchor)]);
+
+export const studyEdges = sqliteTable("study_edges", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  fromId: text("from_id").notNull().references(() => studyNodes.id, { onDelete: "cascade" }),
+  toId: text("to_id").notNull().references(() => studyNodes.id, { onDelete: "cascade" }),
+  origin: text("origin", { enum: ["catalog", "user"] }).notNull(),
+  status: text("status", { enum: ["proposed", "accepted", "rejected"] }).notNull(),
+  rationale: text("rationale").notNull(),
+  catalogVersion: text("catalog_version"),
+}, t => [unique("study_edges_pair").on(t.workspaceId, t.fromId, t.toId)]);
