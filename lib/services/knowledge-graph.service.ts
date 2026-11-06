@@ -11,7 +11,7 @@ import type { LearningMap } from "@/lib/services/learning-map.service";
 
 export type GraphNodeType = "project" | "layer" | "module" | "concept" | "file";
 
-export type GraphLinkKind = "contains" | "imports" | "flow" | "cycle";
+export type GraphLinkKind = "contains" | "imports" | "flow" | "cycle" | "static_call";
 
 export interface GraphNode {
   id: string;

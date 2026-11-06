@@ -95,6 +95,7 @@ export interface CodeAnalysis {
   corpus: FileRecord[];
   /** Raw resolved import edges [from, to] across ALL scanned files. */
   importEdges: Array<[string, string]>;
+  importLocations?: Array<{ from: string; to: string; line: number }>;
 }
 
 // ── File walking ─────────────────────────────────────────────────────────────
@@ -253,6 +254,17 @@ function resolveImport(
   ];
   for (const c of candidates) if (fileSet.has(c)) return c;
   return null;
+}
+
+function importEvidence(content: string, from: string, files: Set<string>) {
+  const result: Array<{ from: string; to: string; line: number }> = [];
+  IMPORT_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = IMPORT_RE.exec(content))) {
+    const to = resolveImport(match[1] || match[2] || match[3] || match[4], from, files);
+    if (to && to !== from) result.push({ from, to, line: content.slice(0, match.index).split("\n").length });
+  }
+  return result;
 }
 
 // ── DSA signal table ─────────────────────────────────────────────────────────
@@ -1004,10 +1016,9 @@ function computePageRank(
 
 // ── Feature traces ───────────────────────────────────────────────────────────
 /**
- * One end-to-end path through the codebase: entry point → … → data layer.
+ * One suggested reading path through file dependencies.
  *
- * The graph answers "what imports what"; a trace answers "what actually happens
- * when a user clicks this", which is where architecture, DSA and system design
+ * The graph records imports; a trace suggests a bounded file reading path, which is where architecture, DSA and system design
  * stop being separate views. `risks` is filled in later from the stored senior
  * review — this function stays pure over CodeAnalysis.
  */
@@ -1066,7 +1077,7 @@ function exportedSymbol(content: string): { symbol?: string; line?: number } {
     const name = m[1];
     if (ROUTE_CONFIG_EXPORTS.has(name)) continue;
     const hit = { symbol: name, line: content.slice(0, m.index).split("\n").length };
-    // A function is what actually runs; keep the first non-config export only as
+    // Prefer a function-shaped export for file inspection; this does not resolve a call. Keep the first non-config export as
     // a fallback in case the file exports nothing callable.
     if (/function|class/.test(m[0])) return hit;
     fallback ??= hit;
@@ -1159,6 +1170,7 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
   const fileSet = new Set(files);
 
   const importEdges: Array<[string, string]> = [];
+  const importLocations: Array<{ from: string; to: string; line: number }> = [];
   const allFindings: CodeFinding[] = [];
   const allChunks: CodeChunk[] = [];
   const corpus: FileRecord[] = [];
@@ -1176,6 +1188,7 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
     }
 
     // Import edges
+    importLocations.push(...importEvidence(content, rel, fileSet));
     for (const spec of parseImports(content)) {
       const resolved = resolveImport(spec, rel, fileSet);
       if (resolved && resolved !== rel) {
@@ -1310,5 +1323,6 @@ export function analyzeCode(projectPath: string, projectTitle: string): CodeAnal
     truncated: walkState.truncated,
     corpus,
     importEdges,
+    importLocations,
   };
 }

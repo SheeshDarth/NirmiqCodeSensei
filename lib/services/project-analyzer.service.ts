@@ -24,13 +24,12 @@ import {
 } from "@/lib/services/workspace.service";
 import { createQuestion } from "@/lib/services/explain-back.service";
 import {
-  createConceptLink,
   createConceptLinkWithSource,
 } from "@/lib/services/concept-link.service";
 import {
-  createLearningMapWithContent,
   getLearningMapByWorkspaceId,
   MODULE_KEYS,
+  moduleKeyForTitle,
 } from "@/lib/services/learning-map.service";
 import { detectStack, generateLocalAnalysisText } from "@/lib/services/local-analyzer.service";
 import {
@@ -38,7 +37,9 @@ import {
   buildFeatureTraces,
   computeSourceFingerprint,
 } from "@/lib/services/code-analyzer.service";
-import { buildSearchIndex } from "@/lib/services/search.service";
+import type { SearchChunkInput } from "@/lib/services/search.service";
+import { readModuleAliases } from "@/lib/pathways/static-calls";
+import { ANALYZER_VERSION, buildSnapshot, normalizeSnapshot } from "@/lib/pathways/snapshot";
 import {
   computeSeniorReview,
   enrichReviewWithAI,
@@ -50,6 +51,7 @@ import {
   conceptLinks,
   learningMaps,
   searchChunks,
+  workspaces,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -517,14 +519,15 @@ export async function analyzeProject(
   }
 
   const workspaceId = wsResult.data.id;
-  const { questionsCreated, conceptsCreated } = await persistAnalysis(
-    workspaceId,
-    resolvedPath,
-    projectName,
-    analysisText,
-    structured,
-    anthropicApiKey
-  );
+  let questionsCreated: number, conceptsCreated: number;
+  try {
+    ({ questionsCreated, conceptsCreated } = await persistAnalysis(
+      workspaceId, resolvedPath, projectName, analysisText, structured, anthropicApiKey
+    ));
+  } catch {
+    await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+    return { ok: false, error: "The analysis could not be saved. No partial workspace was retained.", code: "DB_ERROR" };
+  }
 
   return {
     ok: true,
@@ -608,8 +611,10 @@ export async function reanalyzeProject(
     existingMap.ok &&
     existingMap.data?.sourceFingerprint &&
     currentFingerprint &&
-    existingMap.data.sourceFingerprint === currentFingerprint
+    existingMap.data.sourceFingerprint === currentFingerprint &&
+    normalizeSnapshot(existingMap.data.featureTracesJson, existingMap.data.id).analyzerVersion === ANALYZER_VERSION
   ) {
+    if (!ws.data.sourcePath) await db.update(workspaces).set({ sourcePath: resolvedPath }).where(eq(workspaces.id, workspaceId));
     return {
       ok: true,
       data: {
@@ -628,22 +633,15 @@ export async function reanalyzeProject(
   const computed = await computeAnalysis(resolvedPath, projectName, anthropicApiKey);
   if (!computed.ok) return computed;
 
-  // A refresh replaces auto-generated content. It must not destroy the answers
-  // the student wrote against the previous question set.
-  const priorAnswers = await snapshotAnsweredQuestions(workspaceId);
-
-  await clearAnalysisArtifacts(workspaceId);
-
-  const { questionsCreated, conceptsCreated } = await persistAnalysis(
-    workspaceId,
-    resolvedPath,
-    projectName,
-    computed.data.analysisText,
-    computed.data.structured,
-    anthropicApiKey
-  );
-
-  await restoreAnsweredQuestions(workspaceId, priorAnswers);
+  let questionsCreated: number, conceptsCreated: number;
+  try {
+    ({ questionsCreated, conceptsCreated } = await persistAnalysis(
+      workspaceId, resolvedPath, projectName, computed.data.analysisText,
+      computed.data.structured, anthropicApiKey, true
+    ));
+  } catch {
+    return { ok: false, error: "Refresh could not be saved. The previous analysis is still available.", code: "DB_ERROR" };
+  }
   // Progress is derived from answered questions + completed checkpoints, so
   // without this the workspace keeps its pre-refresh percentage against a
   // freshly generated question set.
@@ -659,81 +657,6 @@ export async function reanalyzeProject(
       conceptsCreated,
     },
   };
-}
-
-/**
- * Remove the auto-generated analysis artifacts for a workspace so a fresh
- * analysis can replace them. Deletes questions, concept links, the search
- * index, and learning maps — NOT user-authored debug/daily/session logs.
- */
-async function clearAnalysisArtifacts(workspaceId: string): Promise<void> {
-  await db
-    .delete(explainBackQuestions)
-    .where(eq(explainBackQuestions.workspaceId, workspaceId));
-  await db.delete(conceptLinks).where(eq(conceptLinks.workspaceId, workspaceId));
-  await db.delete(searchChunks).where(eq(searchChunks.workspaceId, workspaceId));
-  await db.delete(learningMaps).where(eq(learningMaps.workspaceId, workspaceId));
-}
-
-/**
- * A student's answers are NOT analysis artifacts, but they live on the question
- * row that clearAnalysisArtifacts drops — so a refresh would silently take
- * userAnswer/score/confidence with it. That is the most valuable data in the
- * workspace, so snapshot it before the wipe and re-attach it afterwards.
- */
-type AnsweredQuestion = typeof explainBackQuestions.$inferSelect;
-
-async function snapshotAnsweredQuestions(
-  workspaceId: string
-): Promise<AnsweredQuestion[]> {
-  const rows = await db
-    .select()
-    .from(explainBackQuestions)
-    .where(eq(explainBackQuestions.workspaceId, workspaceId));
-  return rows.filter((q) => q.userAnswer !== null && q.userAnswer.trim() !== "");
-}
-
-// Match on normalised text: a re-run usually regenerates the same questions, but
-// whitespace or casing can drift between analyzer versions.
-const questionKey = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, " ");
-
-async function restoreAnsweredQuestions(
-  workspaceId: string,
-  prior: AnsweredQuestion[]
-): Promise<void> {
-  if (prior.length === 0) return;
-  const fresh = await db
-    .select()
-    .from(explainBackQuestions)
-    .where(eq(explainBackQuestions.workspaceId, workspaceId));
-  const freshByKey = new Map(fresh.map((q) => [questionKey(q.question), q]));
-
-  for (const old of prior) {
-    const match = freshByKey.get(questionKey(old.question));
-    if (match) {
-      await db
-        .update(explainBackQuestions)
-        .set({
-          userAnswer: old.userAnswer,
-          score: old.score,
-          confidence: old.confidence,
-        })
-        .where(eq(explainBackQuestions.id, match.id));
-    } else {
-      // The refreshed analysis no longer asks this one. Keep the answered
-      // question rather than discarding work the student already did.
-      await db.insert(explainBackQuestions).values({
-        workspaceId,
-        question: old.question,
-        difficulty: old.difficulty,
-        moduleKey: old.moduleKey,
-        expectedPointsJson: old.expectedPointsJson,
-        userAnswer: old.userAnswer,
-        score: old.score,
-        confidence: old.confidence,
-      });
-    }
-  }
 }
 
 /**
@@ -840,15 +763,21 @@ async function persistAnalysis(
   projectName: string,
   analysisText: string,
   structured: ParsedAnalysis | null,
-  anthropicApiKey?: string
+  anthropicApiKey?: string,
+  replace = false
 ): Promise<{ questionsCreated: number; conceptsCreated: number }> {
+  const pendingQuestions: Array<Parameters<typeof createQuestion>[1]> = [];
+  const pendingConcepts: Array<Parameters<typeof createConceptLinkWithSource>[1]> = [];
+  let pendingChunks: SearchChunkInput[] = [];
+  const queueQuestion = async (_id: string, value: Parameters<typeof createQuestion>[1]) => { pendingQuestions.push(value); return { ok: true }; };
+  const queueConcept = async (_id: string, value: Parameters<typeof createConceptLinkWithSource>[1]) => { pendingConcepts.push(value); return { ok: true }; };
   let questionsCreated = 0;
   let conceptsCreated = 0;
 
   if (structured) {
     // Persist directly from the typed structured output — no prose parsing.
     for (const q of structured.questions) {
-      const r = await createQuestion(workspaceId, {
+      const r = await queueQuestion(workspaceId, {
         question: q.question,
         difficulty: q.difficulty,
         moduleKey: inferQuestionModuleKey(q.question),
@@ -856,7 +785,7 @@ async function persistAnalysis(
       if (r.ok) questionsCreated++;
     }
     for (const c of structured.concepts) {
-      const r = await createConceptLink(workspaceId, {
+      const r = await queueConcept(workspaceId, {
         projectFeature: `${projectName} codebase`,
         conceptName: c.name,
         conceptType: c.type,
@@ -876,7 +805,7 @@ async function persistAnalysis(
         | "beginner"
         | "intermediate"
         | "advanced";
-      const r = await createQuestion(workspaceId, {
+      const r = await queueQuestion(workspaceId, {
         question: qMatch[3].trim(),
         difficulty,
         moduleKey: inferQuestionModuleKey(qMatch[3].trim()),
@@ -888,7 +817,7 @@ async function persistAnalysis(
     const cRegex = /- (.+?)\s*\(([^()]+)\):\s*(.+)/g;
     let cMatch;
     while ((cMatch = cRegex.exec(conceptSection)) !== null) {
-      const r = await createConceptLink(workspaceId, {
+      const r = await queueConcept(workspaceId, {
         projectFeature: `${projectName} codebase`,
         conceptName: cMatch[1].trim(),
         conceptType: cMatch[2].trim(),
@@ -904,6 +833,7 @@ async function persistAnalysis(
   let graphJson: string | undefined;
   let seniorReviewJson: string | undefined;
   let featureTracesJson: string | undefined;
+  let analysisFailure = false;
   let analysisTruncated = false;
   let scannedFileCount = 0;
   try {
@@ -912,7 +842,7 @@ async function persistAnalysis(
     scannedFileCount = code.fileCount;
 
     for (const f of code.findings) {
-      const r = await createConceptLinkWithSource(workspaceId, {
+      const r = await queueConcept(workspaceId, {
         projectFeature: f.file,
         conceptName: f.name,
         conceptType: f.category,
@@ -996,12 +926,12 @@ async function persistAnalysis(
           if (complexFiles.has(hop.file)) hop.risks.push("high complexity");
         }
       }
-      featureTracesJson = JSON.stringify(traces);
+      featureTracesJson = JSON.stringify(buildSnapshot(code, traces, computeSourceFingerprint(resolvedPath), readModuleAliases(resolvedPath)));
     }
 
     // BM25 search index — best-effort, never fail the import
     try {
-      await buildSearchIndex(workspaceId, code.chunks);
+      pendingChunks = code.chunks;
     } catch (e) {
       console.warn("[analyze] search index build failed:", e);
     }
@@ -1009,6 +939,7 @@ async function persistAnalysis(
     // Still best-effort — the learning map saves either way. But swallowing this
     // silently hid a missing graph, Deep Review AND DSA bridge behind an import
     // that looked completely normal.
+    analysisFailure = true;
     console.warn("[analyze] code-analysis phase failed:", e);
   }
 
@@ -1016,20 +947,55 @@ async function persistAnalysis(
   // the project was large enough to hit the file cap, say so honestly in the
   // summary instead of presenting a partial analysis as if it were complete.
   const mapContent = buildLearningMapContent(analysisText, projectName, structured);
-  const summary = analysisTruncated
+  const analysisSummary = analysisTruncated
     ? `${mapContent.summary ? mapContent.summary + "\n\n" : ""}⚠️ Large project — code analysis covered ${scannedFileCount} source files (ranked by importance); some files were not scanned.`
     : mapContent.summary;
   // Fingerprint the source tree so a later reanalyze can skip work when nothing
   // changed (MS4 incremental re-analysis).
   const sourceFingerprint = computeSourceFingerprint(resolvedPath) ?? undefined;
-  await createLearningMapWithContent(workspaceId, {
+  const mapInput = {
     ...mapContent,
-    summary,
+    summary: `${analysisSummary ?? ""}${analysisFailure ? "\n\nSource analysis was unavailable. Graph, walkthrough, or source evidence may be missing; refresh to retry." : ""}`,
     graphJson,
     seniorReviewJson,
     sourceFingerprint,
     featureTracesJson,
+  };
+  // All filesystem work and optional network enrichment finished before this short transaction.
+  db.transaction(tx => {
+    if (replace) tx.update(workspaces).set({ sourcePath: resolvedPath }).where(eq(workspaces.id, workspaceId)).run();
+    const oldMap = replace ? tx.select().from(learningMaps).where(eq(learningMaps.workspaceId, workspaceId)).get() : undefined;
+    const oldQuestions = replace ? tx.select().from(explainBackQuestions).where(eq(explainBackQuestions.workspaceId, workspaceId)).all() : [];
+    const oldConcepts = replace ? tx.select().from(conceptLinks).where(eq(conceptLinks.workspaceId, workspaceId)).all() : [];
+    if (replace) {
+      tx.delete(explainBackQuestions).where(eq(explainBackQuestions.workspaceId, workspaceId)).run();
+      tx.delete(conceptLinks).where(eq(conceptLinks.workspaceId, workspaceId)).run();
+      tx.delete(searchChunks).where(eq(searchChunks.workspaceId, workspaceId)).run();
+      tx.delete(learningMaps).where(eq(learningMaps.workspaceId, workspaceId)).run();
+    }
+    const key = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+    const used = new Set<string>();
+    for (const q of pendingQuestions) {
+      const old = oldQuestions.find(o => key(o.question) === key(q.question));
+      if (old) used.add(old.id);
+      tx.insert(explainBackQuestions).values({ ...q, workspaceId, expectedPointsJson: q.expectedPoints ? JSON.stringify(q.expectedPoints.split("\n").filter(Boolean)) : "[]", userAnswer: old?.userAnswer, score: old?.score, confidence: old?.confidence }).run();
+    }
+    // Existing rows have no reliable authorship flag: preserve unmatched learner material.
+    for (const q of oldQuestions.filter(q => !used.has(q.id))) tx.insert(explainBackQuestions).values({ ...q, learningMapId: null }).run();
+    for (const c of pendingConcepts) tx.insert(conceptLinks).values({ ...c, workspaceId }).run();
+    for (const c of oldConcepts.filter(c => !pendingConcepts.some(n => n.conceptName === c.conceptName && n.projectFeature === c.projectFeature))) tx.insert(conceptLinks).values(c).run();
+    for (const c of pendingChunks) tx.insert(searchChunks).values({ ...c, workspaceId }).run();
+    const modules = mapInput.modules.map(m => ({ ...m, id: crypto.randomUUID(), key: moduleKeyForTitle(m.title), concepts: m.concepts ?? [], files: [], confidence: null as string | null }));
+    const checkpoints = mapInput.checkpoints.map(question => ({ id: crypto.randomUUID(), question, completed: false }));
+    if (oldMap) {
+      const oldModules = JSON.parse(oldMap.modulesJson) as Array<typeof modules[number]>;
+      for (const m of modules) m.confidence = oldModules.find(o => o.key === m.key)?.confidence ?? null;
+      modules.push(...oldModules.filter(o => !modules.some(m => m.key === o.key)));
+      const oldCheckpoints = JSON.parse(oldMap.checkpointsJson) as typeof checkpoints;
+      for (const c of checkpoints) c.completed = oldCheckpoints.some(o => o.question === c.question && o.completed);
+      checkpoints.push(...oldCheckpoints.filter(o => !checkpoints.some(c => c.question === o.question)));
+    }
+    tx.insert(learningMaps).values({ workspaceId, title: mapInput.title, summary: mapInput.summary, analysisRaw: mapInput.analysisRaw, graphJson, seniorReviewJson, sourceFingerprint, featureTracesJson, modulesJson: JSON.stringify(modules), checkpointsJson: JSON.stringify(checkpoints) }).run();
   });
-
   return { questionsCreated, conceptsCreated };
 }

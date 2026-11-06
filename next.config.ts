@@ -74,6 +74,7 @@ const nextConfig: NextConfig = {
   // dynamic /workspaces/[id] routes.
   serverExternalPackages: [
     "better-sqlite3",
+    "typescript",
     "@typescript-eslint/typescript-estree",
     "@typescript-eslint/scope-manager",
     "@typescript-eslint/visitor-keys",

@@ -29,6 +29,8 @@ import { createQuestion, getQuestionsByWorkspaceId, getWeakQuestions } from "../
 import { createConceptLink, getConceptLinksByWorkspaceId } from "../lib/services/concept-link.service";
 import { createDailyLog, getDailyLogsByWorkspaceId } from "../lib/services/daily-log.service";
 import { getLearningMapByWorkspaceId } from "../lib/services/learning-map.service";
+import { createDecisionRecord } from "../lib/services/decision.service";
+import { createDecisionSchema } from "../lib/validators/decision.schema";
 
 // ── AI-powered tools (Pro tier — requires ANTHROPIC_API_KEY) ──────────────────
 import { generateQuestions, suggestConcepts, debugAssist, analyzeProject, explainCommand } from "./ai-tools";
@@ -205,6 +207,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
         },
         required: ["workspace_id", "date"],
+      },
+    },
+    {
+      name: "ncs_record_decision",
+      description:
+        "Record a consequential implementation decision for a workspace. Include the chosen option, genuinely viable alternatives, a concise user-facing rationale, accepted trade-off, and affected file paths. Do not include private chain-of-thought or hidden model reasoning.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace_id: { type: "string", description: "Target workspace UUID" },
+          title: { type: "string", description: "Short decision title" },
+          chosen_option: { type: "string", description: "The approach selected" },
+          alternatives: { type: "array", items: { type: "string" }, description: "Viable alternatives and their main trade-off" },
+          rationale: { type: "string", description: "Concise explanation grounded in project constraints and evidence" },
+          accepted_tradeoff: { type: "string", description: "Known downside or remaining limitation" },
+          affected_paths: { type: "array", items: { type: "string" }, description: "Project-relative files or paths affected" },
+        },
+        required: ["workspace_id", "title", "chosen_option", "rationale"],
       },
     },
     {
@@ -486,6 +506,29 @@ async function runTool(name: string, args: unknown) {
         });
         if (!result.ok) return err(result.error);
         return ok(`✅ Daily log saved for ${v.date}\nView at http://127.0.0.1:3000/workspaces/${v.workspace_id}/daily-log`);
+      }
+
+      case "ncs_record_decision": {
+        const raw = z.object({
+          workspace_id: z.string(),
+          title: z.string(),
+          chosen_option: z.string(),
+          alternatives: z.array(z.string()).optional(),
+          rationale: z.string(),
+          accepted_tradeoff: z.string().optional(),
+          affected_paths: z.array(z.string()).optional(),
+        }).parse(args);
+        const input = createDecisionSchema.parse({
+          title: raw.title,
+          chosenOption: raw.chosen_option,
+          alternatives: raw.alternatives,
+          rationale: raw.rationale,
+          acceptedTradeoff: raw.accepted_tradeoff,
+          affectedPaths: raw.affected_paths,
+        });
+        const result = await createDecisionRecord(raw.workspace_id, input);
+        if (!result.ok) return err(result.error);
+        return ok(`✅ Decision recorded: "${raw.title}"\nView: http://127.0.0.1:3000/workspaces/${raw.workspace_id}/decisions`);
       }
 
       // ── get_weak_questions ────────────────────────────────────────────────

@@ -4,6 +4,9 @@ import { getQuestionsByWorkspaceId } from "@/lib/services/explain-back.service";
 import { getDebugLogsByWorkspaceId } from "@/lib/services/debug-log.service";
 import { getConceptLinksByWorkspaceId } from "@/lib/services/concept-link.service";
 import { getDailyLogsByWorkspaceId } from "@/lib/services/daily-log.service";
+import { getDecisionRecordsByWorkspaceId } from "@/lib/services/decision.service";
+import { getPathwaySnapshot } from "@/lib/services/pathway.service";
+import { STOP_LABELS } from "@/lib/pathways/shared";
 import { formatDate, parseExpectedPoints } from "@/lib/utils";
 import type { ServiceResult } from "@/lib/types";
 import type { SeniorReview } from "@/lib/services/senior-review.service";
@@ -384,4 +387,72 @@ export async function generateWorkspaceMarkdown(
   const filename = `nirmiqcodesensei-${slug(ws.title)}-${Date.now()}.md`;
 
   return { ok: true, data: { filename, markdown } };
+}
+
+export async function generateDecisionMarkdown(
+  workspaceId: string
+): Promise<ServiceResult<ExportPayload>> {
+  const [workspace, decisions] = await Promise.all([
+    getWorkspaceById(workspaceId),
+    getDecisionRecordsByWorkspaceId(workspaceId),
+  ]);
+  if (!workspace.ok) return workspace;
+  if (!decisions.ok) return decisions;
+
+  const lines = [
+    `# Implementation Decisions — ${workspace.data.title}`,
+    "",
+    "Concise implementation rationale and viable alternatives. This document records decisions, not private model reasoning.",
+    "",
+  ];
+  if (decisions.data.length === 0) {
+    lines.push("_No implementation decisions recorded yet._", "");
+  }
+  decisions.data.forEach((decision, index) => {
+    lines.push(`## ${index + 1}. ${decision.title}`, "");
+    lines.push(`**Chosen:** ${decision.chosenOption}`, "");
+    lines.push("**Why:**", "", decision.rationale, "");
+    if (decision.alternatives.length) {
+      lines.push("**Alternatives considered:**");
+      decision.alternatives.forEach((item) => lines.push(`- ${item}`));
+      lines.push("");
+    }
+    if (decision.acceptedTradeoff) {
+      lines.push(`**Accepted trade-off:** ${decision.acceptedTradeoff}`, "");
+    }
+    if (decision.affectedPaths.length) {
+      lines.push(`**Affected paths:** ${decision.affectedPaths.map((path) => `\`${path}\``).join(", ")}`, "");
+    }
+    lines.push(`**Recorded:** ${new Date(decision.createdAt).toISOString()}`, "");
+  });
+  return {
+    ok: true,
+    data: {
+      filename: `decisions-${slug(workspace.data.title)}.md`,
+      markdown: lines.join("\n"),
+    },
+  };
+}
+
+export async function generateFlowMarkdown(workspaceId: string): Promise<ServiceResult<ExportPayload>> {
+  const [workspace, snapshot] = await Promise.all([getWorkspaceById(workspaceId), getPathwaySnapshot(workspaceId)]);
+  if (!workspace.ok) return workspace;
+  if (!snapshot.ok) return snapshot;
+  const data = snapshot.data;
+  const lines = [`# Code Walkthroughs — ${workspace.data.title}`, "", "Import paths suggest a reading order. Statically resolved calls are possibilities, not observed runtime execution or guaranteed execution order.", "", `Analysis: ${data.analyzedAt ? new Date(data.analyzedAt).toISOString() : "legacy; timestamp unknown"}. Scanned files: ${data.coverage.scanned ?? "unknown"}. Partial scan: ${data.coverage.truncated ?? "unknown"}.`, ""];
+  if (data.warning) lines.push(data.warning, "");
+  if (!data.paths.length) lines.push("_No routed walkthroughs saved. Libraries and manual maps may have none._", "");
+  for (const trace of data.paths) {
+    lines.push(`## ${trace.title}`, "", `**Entry:** \`${trace.entry}\``, `**Evidence:** ${trace.kind === "imports" ? "suggested import dependencies" : "possible static calls"}`, "");
+    trace.hops.forEach((hop, index) => {
+      lines.push(`${index + 1}. **${hop.layer}:** \`${hop.file}\`${hop.symbol ? ` — ${hop.symbolKind === "file_export" ? "file export" : "function"}: ${hop.symbol}` : ""}`);
+      if (hop.evidence) lines.push(`   - ${hop.evidence.kind}, from ${hop.evidence.from}${hop.evidence.line ? `:${hop.evidence.line}` : ""}; ${hop.evidence.basis ?? "legacy"} evidence.`);
+      if (hop.alternatives.length) lines.push(`   - Other recorded outgoing relationships: ${hop.alternatives.length}.`);
+      if (hop.concepts.length) lines.push(`   - Concepts: ${hop.concepts.join(", ")}`);
+      if (hop.risks.length) lines.push(`   - Risks: ${hop.risks.join("; ")}`);
+    });
+    lines.push("", `**Last suggested file:** \`${trace.terminal}\``, STOP_LABELS[trace.stopReason], "");
+  }
+  lines.push("_Generated from saved analysis. Re-analyze after source changes._", "");
+  return { ok: true, data: { filename: `flow-${slug(workspace.data.title)}.md`, markdown: lines.join("\n") } };
 }
