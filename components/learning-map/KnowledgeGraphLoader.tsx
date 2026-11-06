@@ -12,6 +12,7 @@
 
 import dynamic from "next/dynamic";
 import { Network } from "lucide-react";
+import type { WalkPath } from "@/lib/pathways/shared";
 import type { KnowledgeGraphData } from "@/lib/services/knowledge-graph.service";
 
 const KnowledgeGraph = dynamic(() => import("./KnowledgeGraph"), {
@@ -25,9 +26,9 @@ const KnowledgeGraph = dynamic(() => import("./KnowledgeGraph"), {
 });
 
 export default function KnowledgeGraphLoader({
-  data,
+  data, activePath, activeFile,
 }: {
-  data: KnowledgeGraphData;
+  data: KnowledgeGraphData; activePath?: WalkPath; activeFile?: string;
 }) {
-  return <KnowledgeGraph data={data} />;
+  return <KnowledgeGraph data={data} activePath={activePath} activeFile={activeFile} />;
 }

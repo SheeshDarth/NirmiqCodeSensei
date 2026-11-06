@@ -16,6 +16,7 @@ import {
   Activity,
   Shield,
   Route,
+  Lightbulb,
 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
@@ -235,7 +236,7 @@ export default async function WorkspaceDetailPage({
           <span className="text-xs text-red-400 font-medium">Open →</span>
         </Link>
 
-        {/* Feature Trace — end-to-end path through the code */}
+        {/* Follow a code walkthrough — end-to-end path through the code */}
         <Link
           href={`/workspaces/${ws.id}/feature-trace`}
           className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
@@ -243,14 +244,27 @@ export default async function WorkspaceDetailPage({
           <div className="flex items-center gap-2 mb-2">
             <Route size={15} className="text-cyan-400" />
             <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">
-              Feature Trace
+              Follow a code walkthrough
             </h2>
           </div>
           <p className="text-xs text-zinc-500 mb-3">
-            A user clicks something — follow what actually runs, from the entry point down to
+            Inspect suggested dependencies and possible static calls from an entry file toward
             the database.
           </p>
           <span className="text-xs text-cyan-400 font-medium">Open →</span>
+        </Link>
+
+        {/* Decision Log — rationale captured by the coding assistant */}
+        <Link
+          href={`/workspaces/${ws.id}/decisions`}
+          className="group bg-[#0d1117] border border-zinc-800 hover:border-zinc-700 rounded-lg p-5 transition-colors block"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Lightbulb size={15} className="text-amber-400" />
+            <h2 className="text-sm font-semibold text-zinc-100 group-hover:text-white">Implementation Decisions</h2>
+          </div>
+          <p className="text-xs text-zinc-500 mb-3">Review why consequential code choices were made and which alternatives were considered.</p>
+          <span className="text-xs text-amber-400 font-medium">Open →</span>
         </Link>
 
         {/* Session Log — vibe coding companion */}

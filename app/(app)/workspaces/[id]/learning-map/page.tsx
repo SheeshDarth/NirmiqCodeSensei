@@ -10,7 +10,8 @@ import CreateMapForm from "@/components/learning-map/CreateMapForm";
 import AddModuleForm from "@/components/learning-map/AddModuleForm";
 import ModuleCard from "@/components/learning-map/ModuleCard";
 import AddCheckpointForm from "@/components/learning-map/AddCheckpointForm";
-import KnowledgeGraphLoader from "@/components/learning-map/KnowledgeGraphLoader";
+import LearningMapExperience from "@/components/learning-map/LearningMapExperience";
+import { getPathwaySnapshot, getPathwayFreshness } from "@/lib/services/pathway.service";
 import {
   createMapAction,
   addModuleAction,
@@ -29,10 +30,11 @@ export default async function LearningMapPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; view?: string; path?: string; step?: string; branches?: string }>;
 }) {
   const { id: workspaceId } = await params;
-  const { q } = await searchParams;
+  const initial = await searchParams;
+  const { q } = initial;
 
   const [wsResult, mapResult, clResult, qResult, indexed] = await Promise.all([
     getWorkspaceById(workspaceId),
@@ -82,8 +84,12 @@ export default async function LearningMapPage({
     graph = buildKnowledgeGraph(workspace.title, map, conceptLinks);
   }
 
+  const snapshot = await getPathwaySnapshot(workspaceId);
+  const freshnessResult = snapshot.ok ? await getPathwayFreshness(workspaceId, snapshot.data) : null;
+  const freshness = freshnessResult?.ok ? freshnessResult.data : "unknown";
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Back */}
       <Link
         href={`/workspaces/${workspaceId}`}
@@ -149,7 +155,7 @@ export default async function LearningMapPage({
           </div>
 
           {/* Interactive knowledge graph */}
-          <KnowledgeGraphLoader data={graph} />
+          {snapshot.ok ? <LearningMapExperience workspaceId={workspaceId} snapshot={snapshot.data} graph={graph} freshness={freshness} initial={initial} /> : <p role="alert" className="text-amber-300">{snapshot.error}</p>}
 
           {/* BM25 code search — only for code-analyzed projects */}
           {indexed && (
@@ -213,9 +219,9 @@ export default async function LearningMapPage({
               <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none hover:bg-zinc-900/50 transition-colors list-none">
                 <FileText size={13} className="text-cyan-500 shrink-0" />
                 <span className="text-xs font-medium text-zinc-400">
-                  Suggested Reading Order
+                  Dependency reading order
                   <span className="ml-2 text-zinc-600 font-normal">
-                    — start here when exploring this codebase
+                    — a file order from import dependencies, not runtime execution
                   </span>
                 </span>
                 <span className="ml-auto text-xs text-zinc-600 group-open:hidden">show</span>

@@ -33,7 +33,7 @@ export default function ModuleCard({
   related,
 }: ModuleCardProps) {
   return (
-    <div className="bg-[#0d1117] border border-zinc-800 rounded-lg p-4 space-y-3">
+    <div id={`module-${module.key}`} className="bg-[#0d1117] border border-zinc-800 rounded-lg p-4 space-y-3">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">

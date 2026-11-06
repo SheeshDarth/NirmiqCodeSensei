@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { WalkPath } from "@/lib/pathways/shared";
 import { Box, Crosshair, Network, Search, X } from "lucide-react";
 import type {
   KnowledgeGraphData,
@@ -47,12 +48,13 @@ function withAlpha(color: string, alpha: number): string {
 // Runtime-enriched shapes the force libs add
 type RNode = GraphNode & { x?: number; y?: number; z?: number };
 type RLink = {
-  kind?: "contains" | "imports" | "flow" | "cycle";
+  kind?: "contains" | "imports" | "flow" | "cycle" | "static_call";
   source?: unknown;
   target?: unknown;
 };
 
 const LINK_STYLE = {
+  static_call: { color: "rgba(34,211,238,0.75)", width: 2.2, arrow: 4, particles: 0 },
   flow: { color: "rgba(244,114,182,0.75)", width: 2.2, arrow: 4, particles: 4 },
   imports: { color: "rgba(148,163,184,0.30)", width: 1, arrow: 2.5, particles: 0 },
   contains: { color: "rgba(148,163,184,0.12)", width: 0.6, arrow: 0, particles: 0 },
@@ -102,10 +104,11 @@ type ForceGraphCtor = new (el: HTMLElement) => ForceGraphInstance;
 
 /** Center the camera on a node (2D pan+zoom, 3D dolly). */
 function focusNode(g: ForceGraphInstance, n: RNode, mode: "2d" | "3d") {
+  const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600;
   if (mode === "2d" && g.centerAt && g.zoom) {
     if (n.x !== undefined && n.y !== undefined) {
-      g.centerAt(n.x, n.y, 600);
-      g.zoom(2.2, 600);
+      g.centerAt(n.x, n.y, duration);
+      g.zoom(2.2, duration);
     }
   } else if (mode === "3d" && g.cameraPosition) {
     const x = n.x ?? 0;
@@ -116,12 +119,16 @@ function focusNode(g: ForceGraphInstance, n: RNode, mode: "2d" | "3d") {
     g.cameraPosition(
       { x: x * ratio, y: y * ratio, z: z * ratio },
       { x, y, z },
-      1000
+      duration ? 1000 : 0
     );
   }
 }
 
-export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
+export default function KnowledgeGraph({ data, activePath, activeFile }: { data: KnowledgeGraphData; activePath?: WalkPath; activeFile?: string }) {
+  const pathNodesRef = useRef(new Set(activePath?.hops.map(h => `file:${h.file}`) ?? []));
+  const pathEdgesRef = useRef(new Set(activePath?.hops.flatMap(h => h.evidence ? [`file:${h.evidence.from}→file:${h.evidence.to}`] : []) ?? []));
+  const activeFileRef = useRef(activeFile);
+  const pathRef = useRef(activePath);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ForceGraphInstance | null>(null);
   const [mode, setMode] = useState<"2d" | "3d">("2d");
@@ -158,6 +165,7 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
       layers: [...layers.entries()],
       hasFlow: kinds.has("flow"),
       hasImports: kinds.has("imports"),
+      hasCalls: kinds.has("static_call"),
       hasCycle: kinds.has("cycle"),
       hasSecurityBadge: data.nodes.some((n) => n.flags?.security),
       hasComplexBadge: data.nodes.some((n) => n.flags?.complex),
@@ -209,7 +217,8 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
         if (srch && srch.size > 0 && !srch.has(n.id)) {
           return withAlpha(colorOf(n), 0.12);
         }
-        return colorOf(n);
+        if (pathNodesRef.current.size && !pathNodesRef.current.has(n.id)) return withAlpha(colorOf(n), 0.15);
+        return n.id === `file:${activeFileRef.current}` ? "#ffffff" : colorOf(n);
       };
       const linkColorFn = (l: RLink): string => {
         const hover = hoverSetRef.current;
@@ -218,6 +227,7 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
           const t = endpointId(l.target);
           if (!hover.has(s) || !hover.has(t)) return "rgba(148,163,184,0.04)";
         }
+        if (pathEdgesRef.current.size) return pathEdgesRef.current.has(`${endpointId(l.source)}→${endpointId(l.target)}`) ? "#22d3ee" : "rgba(148,163,184,0.05)";
         return linkStyle(l).color;
       };
 
@@ -240,7 +250,7 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
         .linkWidth((l) => linkStyle(l).width)
         .linkDirectionalArrowLength((l) => linkStyle(l).arrow)
         .linkDirectionalArrowRelPos(1)
-        .linkDirectionalParticles((l) => linkStyle(l).particles)
+        .linkDirectionalParticles((l) => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : linkStyle(l).particles)
         .linkDirectionalParticleWidth(2)
         .onNodeHover((n) => {
           hoverSetRef.current = n ? neighborhood(adjacency, n.id, 1) : null;
@@ -282,14 +292,15 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
             }
           }
           const important = n.type === "project" || n.type === "layer";
-          if (!important && scale < 1.6) return;
+          const steps = pathRef.current?.hops.flatMap((h, i) => `file:${h.file}` === n.id ? [i + 1] : []) ?? [];
+          if (!important && !steps.length && scale < 1.6) return;
           const fontSize = important ? Math.max(13 / scale, 2) : Math.max(10 / scale, 1.5);
           ctx.font = `${important ? 600 : 400} ${fontSize}px ui-sans-serif, system-ui, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "top";
           ctx.fillStyle = important ? "rgba(244,244,245,0.95)" : "rgba(212,212,216,0.8)";
           const r = Math.sqrt(Math.max(n.val, 1)) * 4;
-          ctx.fillText(n.label, n.x, n.y + r + 1.5);
+          ctx.fillText((steps.length ? `${steps.join(",")}. ` : "") + n.label, n.x, n.y + r + 1.5);
         });
       }
 
@@ -310,6 +321,19 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
       destroy();
     };
   }, [data, mode, adjacency]);
+
+  useEffect(() => {
+    pathNodesRef.current = new Set(activePath?.hops.map(h => `file:${h.file}`) ?? []);
+    pathEdgesRef.current = new Set(activePath?.hops.flatMap(h => h.evidence ? [`file:${h.evidence.from}→file:${h.evidence.to}`] : []) ?? []);
+    activeFileRef.current = activeFile;
+    pathRef.current = activePath;
+    const g = instanceRef.current;
+    if (!g || loading) return;
+    g.linkWidth(l => pathEdgesRef.current.has(`${endpointId(l.source)}→${endpointId(l.target)}`) ? 3 : linkStyle(l).width);
+    repaintRef.current?.();
+    const node = runtimeNodesRef.current.find(n => n.id === `file:${activeFile}`);
+    if (node) focusNode(g, node, mode);
+  }, [activePath, activeFile, loading, mode]);
 
   // Search: debounce, highlight matches, report count
   useEffect(() => {
@@ -396,7 +420,7 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
         <div className="flex items-center gap-2 mr-auto">
           <Network size={14} className="text-cyan-400" />
           <span className="text-sm font-medium text-zinc-200">
-            Architecture &amp; Workflow Map
+            Dependency map and suggested connections
           </span>
           {loading && <span className="text-xs text-zinc-600 animate-pulse">rendering…</span>}
         </div>
@@ -549,9 +573,10 @@ export default function KnowledgeGraph({ data }: { data: KnowledgeGraphData }) {
             <span className="w-4 h-px bg-slate-400/50" /> imports
           </span>
         )}
+        {legend.hasCalls && <span className="text-xs text-cyan-300">possible static call →</span>}
         {legend.hasFlow && (
           <span className="flex items-center gap-1.5 text-xs text-pink-400/80">
-            <span className="w-4 h-px bg-pink-400/70" /> workflow →
+            <span className="w-4 h-px bg-pink-400/70" /> suggested layer order →
           </span>
         )}
         {legend.hasCycle && (

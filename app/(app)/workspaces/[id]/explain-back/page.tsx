@@ -1,3 +1,5 @@
+import PathwayAttemptHistory from "@/components/explain-back/PathwayAttemptHistory";
+import { getPathwayLearning } from "@/lib/services/pathway-learning.service";
 import { getWorkspaceById } from "@/lib/services/workspace.service";
 import { getQuestionsByWorkspaceId } from "@/lib/services/explain-back.service";
 import { notFound } from "next/navigation";
@@ -30,6 +32,8 @@ export default async function WorkspaceExplainBackPage({
   const workspace = wsResult.data;
   const questions = questionsResult.ok ? questionsResult.data : [];
 
+  const pathwayHistory = await getPathwayLearning(workspaceId);
+
   const answered = questions.filter((q) => q.userAnswer).length;
   const weak = questions.filter(
     (q) => q.confidence === "red" || !q.confidence
@@ -55,6 +59,11 @@ export default async function WorkspaceExplainBackPage({
         </p>
       </div>
 
+      <details className="rounded-lg border border-zinc-800 p-4">
+        <summary className="text-sm text-zinc-200 cursor-pointer">Pathway explanations ({pathwayHistory.ok ? pathwayHistory.data.attempts.length : 0})</summary>
+        <div className="mt-3"><Link className="text-xs text-cyan-300 underline" href={`/workspaces/${workspaceId}/learning-map`}>Open the walkthrough to write or reassess an explanation</Link></div>
+        {pathwayHistory.ok ? <div className="mt-3"><PathwayAttemptHistory attempts={pathwayHistory.data.attempts} /></div> : <p role="alert">{pathwayHistory.error}</p>}
+      </details>
       {/* Stats row */}
       {questions.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
