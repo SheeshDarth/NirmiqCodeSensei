@@ -51,6 +51,24 @@ export function coverageLevel(score: number): Level {
   return score >= 70 ? "green" : score >= 40 ? "yellow" : "red";
 }
 
+/** Days to wait before re-asking an answered question, by how well the last answer went. */
+export const REVIEW_DAYS: Record<Level, number> = { red: 1, yellow: 3, green: 7 };
+
+/** When a question answered at `answeredAt` (Unix ms) should be revisited. */
+export function reviewDueAt(answeredAt: number, level: Level): number {
+  return answeredAt + REVIEW_DAYS[level] * 86_400_000;
+}
+
+/** Answered questions only; unanswered ones are not "due", they are just unseen. */
+export function isDueForReview(
+  q: { userAnswer: string | null; updatedAt: number },
+  level: Level | null,
+  now: number = Date.now()
+): boolean {
+  if (!q.userAnswer || !level) return false;
+  return reviewDueAt(q.updatedAt, level) <= now;
+}
+
 export type Calibration = "overconfident" | "aligned" | "underconfident";
 
 /** Compare what the learner predicted against what actually happened. */

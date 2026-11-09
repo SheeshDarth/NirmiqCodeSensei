@@ -12,6 +12,7 @@ import {
   keyPointCoverage,
   coverageLevel,
   classifyCalibration,
+  isDueForReview,
   type Calibration,
   type Level,
 } from "@/lib/utils";
@@ -32,6 +33,11 @@ export type CalibrationSummary = {
 export function actualLevel(q: Question): Level | null {
   if (q.score != null) return coverageLevel(q.score);
   return q.confidence ?? null;
+}
+
+/** Answered questions whose review interval (by last outcome) has elapsed. */
+export function dueQuestions(questions: Question[], now: number = Date.now()): Question[] {
+  return questions.filter((q) => isDueForReview(q, actualLevel(q), now));
 }
 
 export function calibrationOf(q: Question): Calibration | null {

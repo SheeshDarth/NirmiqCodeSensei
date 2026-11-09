@@ -48,6 +48,9 @@ npx nirmiqcodesensei@latest
 - **Calibration.** Predict how well you will explain something *before* the key points are
   revealed; the app compares that with a key-point coverage score. Coverage is a keyword
   heuristic, not a grade of correctness, and no learning-effectiveness claim is made.
+- **Review queue.** Answered questions come back for review on a fixed schedule based on
+  how the last answer went (1 day weak, 3 shaky, 7 solid). It is a simple fixed-interval
+  reminder derived from stored data, not an adaptive spaced-repetition algorithm.
 - **Demo and onboarding.** "Try the demo" builds a small built-in project into a full
   workspace offline, with hand-written code-grounded questions, plus a stateless first-run
   checklist.
@@ -87,6 +90,8 @@ broken or unsafe 1.0:
 
 ### Known limitations
 
+- "Quiz me on my latest changes" appears only when the project folder is a git repository;
+  the demo project is not one.
 - Image optimisation needs the optional `sharp` dependency; without it Next serves unoptimised
   images.
 - macOS is untested in CI (Windows + Linux are covered); it is expected to work via the same

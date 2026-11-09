@@ -163,6 +163,18 @@ async function git(root: string, args: string[]): Promise<string> {
   return stdout;
 }
 
+/** True when the workspace's source folder is inside a git work tree (so a diff can exist). */
+export async function isDiffable(sourcePath: string | null | undefined): Promise<boolean> {
+  if (!sourcePath) return false;
+  try {
+    if (!statSync(sourcePath).isDirectory()) return false;
+    await git(sourcePath, ["rev-parse", "--is-inside-work-tree"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Summarise what changed in the workspace's source tree: uncommitted work
  * (tracked + new files) or, when the tree is clean, the latest commit.

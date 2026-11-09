@@ -167,6 +167,7 @@ Then restart the MCP server. The 3 AI tools appear automatically.
 - **DSA Bridge** — the data structures & algorithms actually detected in your code, each teaching the *core CS concept* behind it and *how it shows up in your code* (file, line, snippet), with a practice task; generic stack concepts are kept in a separate section.
 - **Explain-Back** — questions that force you to prove you understand, not just that it runs. **Quiz me on my latest changes** turns what your AI just wrote (git diff) into questions in one click.
 - **Calibration** — predict how well you'll explain something *before* you see the key points; the app compares that with a key-point coverage score and shows whether you're over- or under-confident. Coverage is a keyword heuristic, not a grade of correctness.
+- **Review queue** — answered questions resurface after 1, 3 or 7 days depending on how the last answer went (a fixed-interval reminder, not an adaptive scheduler).
 - **Workspaces** — one workspace per project; log everything in one place.
 - **Debug Lab** — structured debug logs so you stop making the same mistakes twice.
 - **Daily Log** — what did you build today? what's still unclear? what next?

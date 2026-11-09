@@ -4,8 +4,10 @@ import { getWorkspaceById } from "@/lib/services/workspace.service";
 import {
   getQuestionsByWorkspaceId,
   getCalibration,
+  dueQuestions,
 } from "@/lib/services/explain-back.service";
 import DiffQuizButton from "@/components/explain-back/DiffQuizButton";
+import { isDiffable } from "@/lib/services/diff-quiz.service";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -40,6 +42,8 @@ export default async function WorkspaceExplainBackPage({
   const pathwayHistory = await getPathwayLearning(workspaceId);
   const calResult = await getCalibration(workspaceId);
   const calibration = calResult.ok ? calResult.data : null;
+  const canDiff = await isDiffable(workspace.sourcePath);
+  const due = dueQuestions(questions);
 
   const answered = questions.filter((q) => q.userAnswer).length;
   const weak = questions.filter(
@@ -66,8 +70,34 @@ export default async function WorkspaceExplainBackPage({
         </p>
       </div>
 
-      {workspace.sourcePath && (
+      {canDiff ? (
         <DiffQuizButton workspaceId={workspaceId} action={diffQuizAction} />
+      ) : (
+        workspace.sourcePath && (
+          <p className="text-xs text-zinc-600">
+            &ldquo;Quiz me on my latest changes&rdquo; appears when the project
+            folder is a git repository.
+          </p>
+        )
+      )}
+
+      {due.length > 0 && (
+        <div className="bg-[#0d1117] border border-amber-500/30 rounded-lg p-4">
+          <p className="text-sm font-medium text-amber-300">
+            {due.length} question{due.length === 1 ? "" : "s"} due for review
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Re-answer from memory: weak answers come back after 1 day, shaky
+            after 3, solid after 7.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {due.slice(0, 5).map((q) => (
+              <li key={q.id} className="text-xs text-zinc-400 truncate">
+                {q.question}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {calibration && calibration.measured > 0 && (
