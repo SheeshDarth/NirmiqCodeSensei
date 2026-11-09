@@ -1,6 +1,6 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -40,6 +40,21 @@ test("unanswered or ungraded questions are never due", () => {
   assert.equal(isDueForReview({ userAnswer: null, updatedAt: T0 }, "red", T0 + 99 * DAY), false);
   assert.equal(isDueForReview({ userAnswer: "", updatedAt: T0 }, "red", T0 + 99 * DAY), false);
   assert.equal(isDueForReview({ userAnswer: "x", updatedAt: T0 }, null, T0 + 99 * DAY), false);
+});
+
+test("an app-managed copy nested in another repo is not diffable until it has its own history", async () => {
+  const { IMPORTED_PROJECTS_DIR } = await import("@/lib/services/project-analyzer.service");
+  mkdirSync(IMPORTED_PROJECTS_DIR, { recursive: true });
+  const dir = mkdtempSync(path.join(IMPORTED_PROJECTS_DIR, "ncs-nested-"));
+  try {
+    // Sits inside whatever repository contains data/ (or none): either way, no own history.
+    assert.equal(await isDiffable(dir), false);
+    execFileSync("git", ["-C", dir, "init", "-q"], { stdio: "pipe" });
+    assert.equal(await isDiffable(dir), true);
+  } finally {
+    assert.ok(path.resolve(dir).startsWith(path.join(IMPORTED_PROJECTS_DIR, "ncs-nested-")));
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("isDiffable is true only for a folder inside a git work tree", async () => {

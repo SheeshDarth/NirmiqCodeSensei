@@ -12,7 +12,7 @@ export default function PathwayAttemptHistory({ attempts, currentVersion, source
       let criteria: string[] = []; let scores: number[] = [];
       try { const rubric = JSON.parse(a.rubricJson); criteria = rubric.criteria.filter((c: unknown) => typeof c === "string"); scores = JSON.parse(a.scoresJson); } catch { /* legacy or damaged history stays readable */ }
       return <details key={a.id} className="rounded-lg border border-zinc-800 p-3">
-        <summary className="text-xs text-zinc-300 cursor-pointer">{saved.title} · {new Date(a.createdAt).toLocaleString()} · {a.score}/10 · {a.ready ? "Self-assessed ready for saved version" : "Needs review"}</summary>
+        <summary className="text-xs text-zinc-300 cursor-pointer">{saved.title} · {new Date(a.createdAt).toLocaleString("en-US")} · {a.score}/10 · {a.ready ? "Self-assessed ready for saved version" : "Needs review"}</summary>
         <p className="text-xs text-amber-200 mt-3">{currentVersion === a.contentVersion && sourceMatches ? "Source version matches the current selection." : "Check the current walkthrough before applying this assessment to changed source."}</p>
         <pre className="whitespace-pre-wrap break-words text-sm text-zinc-300 mt-3">{a.answer}</pre>
         <ol className="list-decimal pl-5 text-xs text-zinc-400 mt-3 space-y-2">{criteria.map((c, i) => <li key={i}>{c} — {scores[i] ?? "unavailable"}/2</li>)}</ol>

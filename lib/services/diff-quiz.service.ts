@@ -8,6 +8,7 @@ import {
   getQuestionsByWorkspaceId,
 } from "@/lib/services/explain-back.service";
 import { BLOCKED_SOURCE_PATH } from "@/lib/services/source-view.service";
+import { IMPORTED_PROJECTS_DIR } from "@/lib/services/project-analyzer.service";
 import type { ServiceResult } from "@/lib/types";
 
 const run = promisify(execFile);
@@ -163,13 +164,22 @@ async function git(root: string, args: string[]): Promise<string> {
   return stdout;
 }
 
-/** True when the workspace's source folder is inside a git work tree (so a diff can exist). */
+/**
+ * True when the workspace's source folder has git history a diff can come from.
+ * Copies the app made itself (data/imported-projects, e.g. the demo) can sit inside
+ * the user's own repository, so they only count when they are their own repo root;
+ * otherwise their files would show up as "new" in someone else's work tree.
+ */
 export async function isDiffable(sourcePath: string | null | undefined): Promise<boolean> {
   if (!sourcePath) return false;
   try {
     if (!statSync(sourcePath).isDirectory()) return false;
     await git(sourcePath, ["rev-parse", "--is-inside-work-tree"]);
-    return true;
+    const rel = path.relative(IMPORTED_PROJECTS_DIR, sourcePath);
+    const managedCopy = rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+    if (!managedCopy) return true;
+    const top = (await git(sourcePath, ["rev-parse", "--show-toplevel"])).trim();
+    return path.relative(top, sourcePath) === "";
   } catch {
     return false;
   }
@@ -192,12 +202,8 @@ export async function getDiffContext(
   if (base !== undefined && !SAFE_REF.test(base))
     return { ok: false, error: "Invalid base ref", code: "BAD_REF" };
 
-  try {
-    if (!statSync(root).isDirectory()) throw new Error("not a directory");
-    await git(root, ["rev-parse", "--is-inside-work-tree"]);
-  } catch {
+  if (!(await isDiffable(root)))
     return { ok: false, error: "Source folder is missing or not a git repository", code: "NOT_GIT" };
-  }
 
   try {
     const flags = ["diff", "--unified=0", "--no-color", "--no-ext-diff", "--no-textconv", "--relative"];
